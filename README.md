@@ -24,12 +24,12 @@ If the defaults do not work for you or are using some other technology, you can 
 - -t <server_wait>      Timeout allowed for the service to startup [default: 6]
 
 
-# Opinions
+# Scenarios
 
-- JSON is the default Content Type of responses
-- GET request with unknown Content-Type would return 406
-- GET request to a path without variables will return 200
-- GET request as above + unknown query parameter will return 200 (unknown query params are ignored)
+- GET Index like paths with JSON Content-Type, expect 200
+- GET Index like paths with JSON Content-Type and unknown query parameters, expect 200
+- GET Index like paths with unknown Content-Type, expect 406
+- If 406 is defined for this endpoint, expect body to match definition
 
 In the future it will keep adding more parameters and headers variations to test the response of your endpoints
 in different situations, including things like broken parameters, etc.

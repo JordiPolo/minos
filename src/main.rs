@@ -137,8 +137,6 @@ fn validate(
 }
 
 
-
-
 fn json_error(location: &Location) -> Disparity {
     Disparity::new("Response could not be parsed as JSON. Responses must be proper JSON.",location.clone())
 }
@@ -228,12 +226,22 @@ fn main() {
             //     });
             // }
 
+            // 405
+            let mut location = Location::new(vec![path_name, "get", "200", "using_disallowed_method"]);
+            let method_name = spec::get_random_undefined_method(methods);
+            let real_response = service.call_with_method(path_name, &method_name);
+
+            let failed_405 = check_status(real_response.status, StatusCode::MethodNotAllowed, &location);
+            result.option_push(failed_405);
 
 
             //406
             let defined_406 = spec::method_status_info(methods, "406");
             let mut location = Location::new(vec![path_name, "get", "using_wrong_content_type"]);
             let real_response = service.call_failed_content_type(path_name);
+
+            let failed_406 = check_status(real_response.status, StatusCode::NotAcceptable, &location);
+            result.option_push(failed_406.clone());
 
             match defined_406 {
                 // 406 defined in the spec, this should be used for a wrong content type
@@ -253,18 +261,13 @@ fn main() {
                 },
                 // 406 not defined
                 None => {
-                    let error = if real_response.status == StatusCode::NotAcceptable {
-                        Disparity::new(
-                            &format!("Got 406 response for a wrong content type but it is not defined in the file."),
+                    if failed_406.is_none() {
+                        let error = Disparity::new(
+                            &format!("Correctly got 406 response for a wrong content type but 406 is not defined in the file."),
                             location.clone()
-                        )
-                    } else {
-                        Disparity::new(
-                            &format!("The status code when a wrong content type is provided is {} but should be 406.", real_response.status),
-                            location.clone()
-                        )
-                    };
-                    result.push(error);
+                        );
+                        result.push(error);
+                    }
                 }
             }
 

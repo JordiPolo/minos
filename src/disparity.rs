@@ -28,7 +28,7 @@ impl Display for Location {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Disparity {
     message: String,
     location: Location,

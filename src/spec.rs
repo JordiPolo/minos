@@ -1,5 +1,5 @@
 use openapi;
-use std::{string::String, collections::BTreeMap};
+use std::{string::String};
 
 pub struct Spec {
     pub spec: openapi::v2::Spec,
@@ -22,6 +22,14 @@ impl Spec {
 
     pub fn json_ref_name(&self, reference: &str) -> String {
         reference.split("/").last().unwrap().to_owned()
+    }
+}
+
+pub fn get_random_undefined_method(methods: &openapi::v2::PathItem) -> String {
+    if methods.patch.is_none() {
+        "patch".to_string()
+    } else {
+        "put".to_string()
     }
 }
 

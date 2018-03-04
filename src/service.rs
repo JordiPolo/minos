@@ -10,6 +10,7 @@ pub struct Service {
     base_url: String,
     base_path: String,
     server: Option<Child>,
+    client: reqwest::Client,
 }
 
 pub struct ServiceResponse {
@@ -31,7 +32,8 @@ impl Service {
         server.as_ref().map(|_| sleep(Duration::from_millis(config.server_wait * 1000)));
 
         let base_path = base_path_option.clone().unwrap_or("".to_string());
-        Service {base_url: config.base_url.clone(), base_path, server}
+        let client = reqwest::Client::new();
+        Service {base_url: config.base_url.clone(), base_path, server, client}
     }
 
     pub fn kill(&mut self) {
@@ -42,7 +44,7 @@ impl Service {
         let endpoint = self.endpoint_param(path, "json", query_params);
     //    println!("Calling {:?}\n", endpoint);
 
-        let mut resp = reqwest::get(&endpoint).expect("The request to the endpoint failed.");
+        let mut resp = self.client.get(&endpoint).send().expect("The request to the endpoint failed.");
         let body = resp.text().expect(
             "It was not possible to read data from body.",
         );
@@ -54,12 +56,25 @@ impl Service {
         let endpoint = self.endpoint(path, "jason");
     //    println!("Calling {:?}\n", endpoint);
 
-        let mut resp = reqwest::get(&endpoint).expect("The request to the endpoint failed.");
+        let mut resp = self.client.get(&endpoint).send().expect("The request to the endpoint failed.");
         let body = resp.text().expect(
             "It was not possible to read data from body.",
         );
     //    json::parse(&body).unwrap()
         ServiceResponse { status: resp.status(), value: json::parse(&body) }
+    }
+
+
+    pub fn call_with_method(&self, path: &str, method_name: &str) -> ServiceResponse {
+        let endpoint = self.endpoint(path, "json");
+    //    println!("Calling {:?}\n", endpoint);
+        let resp = if method_name == "patch" {
+          self.client.patch(&endpoint).send().expect("The request to the endpoint failed.")
+        } else {
+          self.client.put(&endpoint).send().expect("The request to the endpoint failed.")
+        };
+
+        ServiceResponse { status: resp.status(), value: Ok(json::JsonValue::Null) }
     }
 
     fn endpoint_param(&self, path: &str, content_type: &str, query_params: Option<(&str, &str)>) -> String {

@@ -11,7 +11,7 @@ pub fn check_status(response_status: StatusCode, desired_status: StatusCode, loc
         None
     } else {
         let error = Disparity::new(
-            &format!("Got an status of {} when expected {}", response_status, desired_status),
+            &format!("Response status inconsistency: Expected: {}, got {}. ", desired_status, response_status),
             location.clone(),
         );
         Some(error)
