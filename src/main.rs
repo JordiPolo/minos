@@ -39,10 +39,10 @@ use spec::*;
 mod cli_args;
 use cli_args::*;
 
-
-fn looks_like_index(path_name: &str) -> bool {
+// TODO, also ignore the ones with required parameters
+fn looks_like_index(path_name: &str, methods: &openapi::v2::PathItem) -> bool {
     let re = Regex::new(r"^/[\w|-]+$").unwrap();
-    re.is_match(path_name)
+    re.is_match(path_name) && methods.get.is_some()
 }
 
 fn json_ref_name(reference: &str) -> String {
@@ -147,9 +147,9 @@ fn json_error(location: &Location) -> Disparity {
 // Dont blow up on booleans
 // Try parameters, it should be ok
 // Try malformed parameters, it should be 422 and json body
-// Run and control of server
 
-// Maybe:
+
+// 0.2:
 // Experiment with parameters on paths for non index get routes
 
 // TODO: Experiment using yaml-rust instead of openapi crate to read the spec
@@ -175,9 +175,9 @@ fn main() {
         // println!("{:?}", checked);
         // checked = checked + 1;
         // pb.set_position(checked);
-        if looks_like_index(path_name) {
+        if looks_like_index(path_name, &methods) {
             // 200 + There must be always at least a success response in an index
-            let defined_200 = spec::method_status_info(methods, "200").unwrap();
+            let defined_200 = spec::method_status_info(methods, "200").expect(&format!("Path {} without 200", path_name));
             let schema = spec::extract_schema(&defined_200).unwrap();
             let mut location = Location::new(vec![path_name, "get", "200"]);
             let real_response = service.call_success(path_name, None);

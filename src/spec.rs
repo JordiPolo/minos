@@ -34,8 +34,12 @@ pub fn get_random_undefined_method(methods: &openapi::v2::PathItem) -> String {
 }
 
 pub fn method_status_info(methods: &openapi::v2::PathItem, status_code: &str) -> Option<openapi::v2::Response> {
-    let responses = methods.clone().get.map(|m| m.responses).unwrap();
-    responses.get(status_code).map(|a| a.clone())
+    let responses = methods.clone().get.map(|m| m.responses);//.unwrap();
+    match responses {
+        Some(resp) => resp.get(status_code).map(|a| a.clone()),
+        None => None
+    }
+    //responses.get(status_code).map(|a| a.clone())
 }
 
  pub fn extract_schema(status_info: &openapi::v2::Response ) -> Option<openapi::v2::Schema> {

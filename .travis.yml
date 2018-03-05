@@ -1,0 +1,47 @@
+dist: trusty
+language: rust
+services: docker
+sudo: required
+env:
+  global:
+  - CRATE_NAME=minos
+matrix:
+  include:
+    - env: TARGET=x86_64-unknown-linux-musl
+      rust: nightly
+    - env: TARGET=x86_64-apple-darwin
+      os: osx
+      rust: nightly
+    - env: TARGET=x86_64-pc-windows-gnu
+      rust: nightly
+before_install:
+- set -e
+- rustup self update
+install:
+- sh ci/install.sh
+- source ~/.cargo/env || true
+script:
+- bash ci/script.sh
+after_script: set +e
+before_deploy:
+- sh ci/before_deploy.sh
+deploy:
+  api_key:
+    secure: dB0qhbCE75tenb2vHelbXi0Mvo28ToVk3EnjhNtHoJ7mfBDv4vgdh9g9tPhgT8CBVJjMbm6XQnvRC5ihDXWKk90MQ+2sl/viMR26HXzA1TiteSkbw09yF8nfbKQKwu6lbZqGO/eSff68x5z/1djOT/eLOr7ZX7LwUOAhwNCHiv3ApXZqaUCyJYHnu0C1NulX5Uo2LiXFXCrsiWIgclse53hLStHmb6XCQ829QzGM/Su16A3aAofyx3wgVrpifm1B6zvOeSe3o3fXwsOiDmLakTwa6Z/I+TwwEJTu5Oiz/2/FSQsHte6iAUjpvbd53l26U2Ub5Jaq4TcjvxxT8S0jyzD7+MtVyqyr8tpBcyi1+4QnIJZ8OXK3yxPEWKwEf8SdyCB19F/kOxJKt5kXE9bVF1ivL73P6iJHopPw2fJwWHMqpEWDKnK8FrXbtzqapTRf0thW2zTo1Jw2lsyqMPLwLuzK6g+MZqrLe1o989lo+5ne0b2YIDof6gY8snB22+AvWTbrRSJncd3QUHCcTVYYMgR2x3vm7SKKDeS2K6PqxgD6IyY5lhSx7fdm5qmkQ8toefY+GZGrBiZn2y1JtTKx7+G1g9TqI6jvvvmQAzZZrKtlkatPU80zMD8YYpa3YqvR2xQjDidu9Rwkh9HDM1wX42BUPdGQOd68QyO4ws3Thv4=
+  file_glob: true
+  file: "$CRATE_NAME-$TRAVIS_TAG-$TARGET.*"
+  on:
+    condition: "$TRAVIS_RUST_VERSION = nightly"
+    tags: true
+  provider: releases
+  skip_cleanup: true
+cache: cargo
+before_cache:
+- chmod -R a+r $HOME/.cargo
+branches:
+  only:
+  - "/^v\\d+\\.\\d+\\.\\d+.*$/"
+  - master
+notifications:
+  email:
+    on_success: never
