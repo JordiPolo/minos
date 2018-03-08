@@ -29,6 +29,8 @@ impl Service {
         } else {
             None
         };
+
+        println!("Waiting {:?} seconds", &config.server_wait);
         server.as_ref().map(|_| sleep(Duration::from_millis(config.server_wait * 1000)));
 
         let base_path = base_path_option.clone().unwrap_or("".to_string());

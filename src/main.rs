@@ -39,10 +39,22 @@ use spec::*;
 mod cli_args;
 use cli_args::*;
 
-// TODO, also ignore the ones with required parameters
-fn looks_like_index(path_name: &str, methods: &openapi::v2::PathItem) -> bool {
+fn looks_like_index(spec: &Spec, path_name: &str, methods: &openapi::v2::PathItem) -> bool {
     let re = Regex::new(r"^/[\w|-]+$").unwrap();
-    re.is_match(path_name) && methods.get.is_some()
+    if re.is_match(path_name) && methods.get.is_some() {
+        let params_option = methods.clone().get.unwrap().parameters;
+        match params_option {
+            Some(params) => {
+                params.iter().all(| ref p| {
+                    match resolve_parameter_ref(spec, p).required {
+                        Some(required) => !required,
+                        None => true,
+                    }
+                })
+            },
+            None => true
+        }
+    } else { false }
 }
 
 fn json_ref_name(reference: &str) -> String {
@@ -154,6 +166,95 @@ fn json_error(location: &Location) -> Disparity {
 
 // TODO: Experiment using yaml-rust instead of openapi crate to read the spec
 
+fn resolve_parameter_ref( spec: &Spec, param_or_ref: &openapi::v2::ParameterOrRef) -> openapi::v2::Parameter {
+    match param_or_ref.clone() {
+        openapi::v2::ParameterOrRef::Parameter{name, location, required, schema, unique_items, param_type, format, description, minimum, maximum, default} => {
+            openapi::v2::Parameter {name, location, required, schema, unique_items, param_type, format, description, minimum, maximum, default}
+        },
+        openapi::v2::ParameterOrRef::Ref{ref_path} => spec.resolve_parameter(&ref_path)
+    }
+}
+
+struct RequestParam {
+    name: String,
+    value: String,
+}
+
+impl RequestParam {
+    fn new(name: &str, value: &str) -> Self {
+        RequestParam {name: name.to_string(), value: value.to_string()}
+    }
+}
+
+ use std::str::FromStr;
+// Get a valid param, if possible not the default one.
+fn to_boolean_request_param(param: &openapi::v2::Parameter) -> RequestParam {
+    if param.clone().default.unwrap_or(true.into()) == true.into() {
+        RequestParam::new(&param.name, "false")
+    } else {
+        RequestParam::new(&param.name, "true")
+    }
+}
+
+fn to_integer_request_param(param: &openapi::v2::Parameter) -> RequestParam {
+    let default: i32 = param.clone().default.unwrap_or(1.into()).into();
+    let min = param.minimum.unwrap_or(1);
+    let max = param.maximum.unwrap_or(100);
+    let mut value: i32 = (min + max) / 2;
+    if value == default && value < max {
+        value = value + 1;
+    }
+    RequestParam::new(&param.name, &format!("{:?}", value))
+}
+
+fn to_request_param(param: &openapi::v2::Parameter) -> RequestParam {
+    let p = param.clone();
+    let p_type = p.param_type.unwrap();
+    if p_type == "boolean"{
+        to_boolean_request_param(&param)
+    } else if p_type == "integer" {
+        to_integer_request_param(&param)
+    } else { RequestParam::new(&param.name, "true") }
+}
+
+fn get_proper_param(spec: &Spec, methods: &openapi::v2::PathItem) -> Option<RequestParam> {
+    // Can unwrap because we are in the index method
+    let get_method = methods.clone().get.unwrap();
+    let params = match get_method.parameters {
+        Some(param) => Some(param.into_iter().map(|p| resolve_parameter_ref(&spec, &p))),
+        None => None
+    };
+
+    if params.is_none() {
+        return None;
+    }
+
+    let params_with_types = params.unwrap().into_iter().filter(|x| x.param_type.is_some());
+
+    let mut request_params = params_with_types.filter(|x| {
+        let name = x.clone().name;
+        let p_type = x.clone().param_type.unwrap();
+        (p_type == "boolean" || p_type == "integer") && ( name != "page" && name != "per_page" && name != "include_count")
+    }).map(|param| to_request_param(&param));
+
+    request_params.nth(0)
+}
+
+// fn check_200() {
+//     let real_response = service.call_success(path_name, None);
+
+//     match real_response.value {
+//         Ok(body) => {
+//             if !result.option_push(check_status(real_response.status, StatusCode::Ok, &location)) {
+//                 result.merge(validate(&spec, &schema, &body, &mut location));
+//             }
+//         },
+//         Err(_) => result.push(json_error(&location))
+//     }
+
+// }
+
+
 
 fn main() {
     // Set output text to yello
@@ -175,7 +276,7 @@ fn main() {
         // println!("{:?}", checked);
         // checked = checked + 1;
         // pb.set_position(checked);
-        if looks_like_index(path_name, &methods) {
+        if looks_like_index(&spec, path_name, &methods) {
             // 200 + There must be always at least a success response in an index
             let defined_200 = spec::method_status_info(methods, "200").expect(&format!("Path {} without 200", path_name));
             let schema = spec::extract_schema(&defined_200).unwrap();
@@ -202,7 +303,46 @@ fn main() {
                 Err(_) => result.push(json_error(&location))
             }
 
+            // 200 + allowed parameter with proper value should break nothing
+            match get_proper_param(&spec, &methods) {
+                Some(param) => {
+                    let mut location = Location::new(vec![path_name, "get", "200", "adding proper param", &param.name]);
+                    let real_response = service.call_success(path_name, Some((&param.name, &param.value)));
+                    match real_response.value {
+                        Ok(body) => {
+                            result.option_push(check_status(real_response.status, StatusCode::Ok, &location));
+                            result.merge(validate(&spec, &schema, &body, &mut location));
+                        },
+                        Err(_) => result.push(json_error(&location))
+                    }
+                },
+                None => {},
+            }
 
+            // 200 + allowed parameter with a wrong value should give a 422
+            match get_proper_param(&spec, &methods) {
+                Some(param) => {
+                    let mut location = Location::new(vec![path_name, "get", "200", "adding improper param", &param.name]);
+                    let real_response = service.call_success(path_name, Some((&param.name, "nooooo")));
+                    match real_response.value {
+                        Ok(body) => {
+                            result.option_push(check_status(real_response.status, StatusCode::UnprocessableEntity, &location));
+                            result.merge(validate(&spec, &schema, &body, &mut location));
+                        },
+                        Err(_) => result.push(json_error(&location))
+                    }
+                },
+                None => {},
+            }
+
+
+         //   println!("{:?}", params);
+          //  let params = get_method.parameters.map(|param| param.into_iter().map(|p| resolve_parameter_ref(&spec, &p)));
+
+            // match params {
+            //     Some(parameters) => {}
+            //     None => _
+            // }
 
            // Can unwrap because we are in the index method
             // match &methods.clone().get.unwrap().parameters {

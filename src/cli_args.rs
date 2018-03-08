@@ -12,7 +12,7 @@ pub struct CLIArgs {
     #[structopt(short = "s", help = "Command to use to launch server", default_value = "bundle exec rails server")]
     pub server_command: String,
 
-    #[structopt(short = "t", help = "Timeout allowed for the service to startup", default_value = "6")]
+    #[structopt(short = "t", help = "Timeout allowed for the service to startup", default_value = "10")]
     pub server_wait: u64,
 
     #[structopt(short = "rs", help = "Runs the server itself or not", default_value = "true")]

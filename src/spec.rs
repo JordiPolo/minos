@@ -23,6 +23,11 @@ impl Spec {
     pub fn json_ref_name(&self, reference: &str) -> String {
         reference.split("/").last().unwrap().to_owned()
     }
+
+    pub fn resolve_parameter(&self, parameter_name: &str) -> openapi::v2::Parameter {
+        let global_params = self.spec.parameters.clone().unwrap();
+        global_params.get(&self.json_ref_name(&parameter_name)).unwrap().clone()
+    }
 }
 
 pub fn get_random_undefined_method(methods: &openapi::v2::PathItem) -> String {
