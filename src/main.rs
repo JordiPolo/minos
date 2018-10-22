@@ -1,5 +1,4 @@
-#![feature(match_default_bindings)]
-
+//#![feature(match_default_bindings)]
 extern crate openapi;
 extern crate regex;
 extern crate serde_json;
@@ -13,11 +12,8 @@ extern crate termcolor;
 use regex::Regex;
 
 use json::JsonValue;
-use structopt::StructOpt;
 
 use reqwest::StatusCode;
-
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 //use indicatif::ProgressBar;
 
@@ -37,24 +33,48 @@ mod spec;
 use spec::*;
 
 mod cli_args;
-use cli_args::*;
+mod cli;
 
-fn looks_like_index(spec: &Spec, path_name: &str, methods: &openapi::v2::PathItem) -> bool {
+mod mutation;
+
+mod request_params;
+//use request_params::*;
+//use std::collections::BTreeMap;
+
+fn has_url_params(path_name: &str) -> bool {
     let re = Regex::new(r"^/[\w|-]+$").unwrap();
-    if re.is_match(path_name) && methods.get.is_some() {
-        let params_option = methods.clone().get.unwrap().parameters;
-        match params_option {
-            Some(params) => {
-                params.iter().all(| ref p| {
-                    match resolve_parameter_ref(spec, p).required {
-                        Some(required) => !required,
-                        None => true,
-                    }
-                })
-            },
-            None => true
-        }
-    } else { false }
+    if re.is_match(path_name)
+    {
+        false
+    } else {
+        true
+    } 
+}
+//GET, no path params, no required query params
+fn looks_like_index(spec: &Spec, path_name: &str, methods: &openapi::v2::PathItem) -> bool {
+    if has_url_params(path_name) {
+        return false;
+    }
+
+    match &methods.get {
+        Some(get) => {
+            // Ok, so far so good. 
+            // Now we will not allow any required parameter. Maybe in the future we can improve on this
+            let params_option = &get.parameters;
+            match params_option {
+                Some(params) => {
+                    params.iter().all(| ref p| {
+                        match resolve_parameter_ref(spec, p).required {
+                            Some(required) => !required,
+                            None => true,
+                        }
+                    })
+                },
+                None => true
+            }          
+        },
+        None => false
+    }
 }
 
 fn json_ref_name(reference: &str) -> String {
@@ -76,6 +96,7 @@ fn validate(
         return disparities;
     }
 
+    //TODO: match the option.
     let s_type = schema.schema_type.clone().unwrap();
    // println!("{:?} -> {:?}", location, s_type);
 
@@ -168,76 +189,11 @@ fn json_error(location: &Location) -> Disparity {
 
 fn resolve_parameter_ref( spec: &Spec, param_or_ref: &openapi::v2::ParameterOrRef) -> openapi::v2::Parameter {
     match param_or_ref.clone() {
-        openapi::v2::ParameterOrRef::Parameter{name, location, required, schema, unique_items, param_type, format, description, minimum, maximum, default} => {
-            openapi::v2::Parameter {name, location, required, schema, unique_items, param_type, format, description, minimum, maximum, default}
+        openapi::v2::ParameterOrRef::Parameter{name, location, required, schema, unique_items, param_type, format, description, minimum, maximum, default, enum_values} => {
+            openapi::v2::Parameter {name, location, required, schema, unique_items, param_type, format, description, minimum, maximum, default, enum_values}
         },
         openapi::v2::ParameterOrRef::Ref{ref_path} => spec.resolve_parameter(&ref_path)
     }
-}
-
-struct RequestParam {
-    name: String,
-    value: String,
-}
-
-impl RequestParam {
-    fn new(name: &str, value: &str) -> Self {
-        RequestParam {name: name.to_string(), value: value.to_string()}
-    }
-}
-
- use std::str::FromStr;
-// Get a valid param, if possible not the default one.
-fn to_boolean_request_param(param: &openapi::v2::Parameter) -> RequestParam {
-    if param.clone().default.unwrap_or(true.into()) == true.into() {
-        RequestParam::new(&param.name, "false")
-    } else {
-        RequestParam::new(&param.name, "true")
-    }
-}
-
-fn to_integer_request_param(param: &openapi::v2::Parameter) -> RequestParam {
-    let default: i32 = param.clone().default.unwrap_or(1.into()).into();
-    let min = param.minimum.unwrap_or(1);
-    let max = param.maximum.unwrap_or(100);
-    let mut value: i32 = (min + max) / 2;
-    if value == default && value < max {
-        value = value + 1;
-    }
-    RequestParam::new(&param.name, &format!("{:?}", value))
-}
-
-fn to_request_param(param: &openapi::v2::Parameter) -> RequestParam {
-    let p = param.clone();
-    let p_type = p.param_type.unwrap();
-    if p_type == "boolean"{
-        to_boolean_request_param(&param)
-    } else if p_type == "integer" {
-        to_integer_request_param(&param)
-    } else { RequestParam::new(&param.name, "true") }
-}
-
-fn get_proper_param(spec: &Spec, methods: &openapi::v2::PathItem) -> Option<RequestParam> {
-    // Can unwrap because we are in the index method
-    let get_method = methods.clone().get.unwrap();
-    let params = match get_method.parameters {
-        Some(param) => Some(param.into_iter().map(|p| resolve_parameter_ref(&spec, &p))),
-        None => None
-    };
-
-    if params.is_none() {
-        return None;
-    }
-
-    let params_with_types = params.unwrap().into_iter().filter(|x| x.param_type.is_some());
-
-    let mut request_params = params_with_types.filter(|x| {
-        let name = x.clone().name;
-        let p_type = x.clone().param_type.unwrap();
-        (p_type == "boolean" || p_type == "integer") && ( name != "page" && name != "per_page" && name != "include_count")
-    }).map(|param| to_request_param(&param));
-
-    request_params.nth(0)
 }
 
 // fn check_200() {
@@ -254,22 +210,118 @@ fn get_proper_param(spec: &Spec, methods: &openapi::v2::PathItem) -> Option<Requ
 
 // }
 
+//TODO: Divide this into several methods?
+fn check_and_validate(
+    spec: &Spec, //&std::collections::BTreeMap<std::string::String, openapi::v2::Schema>,
+    methods: &openapi::v2::PathItem,
+    code: &str,
+    real_response: &ServiceResponse,
+    status: reqwest::StatusCode,
+    mut location: &mut Location,
+) -> DisparityList {
+    let mut result = DisparityList::new();
+    let defined_code = spec::method_status_info(methods, code);
+
+    match defined_code {
+        Some(defined) => {
+            let failed = result.option_push(check_status(real_response.status, status, &location));
+            match spec::extract_schema(&defined) {
+                Some(schema) => {
+                    if !failed {
+                        match real_response.value {
+                            Ok(ref body) => {
+                                    result.merge(validate(&spec, &schema, &body, &mut location));
+                            },
+                            Err(_) => result.push(json_error(&location))
+                        }
+                    }
+                },
+                None => {
+                    let error = Disparity::new(
+                        &format!("Expected that the endpoint to have a schema for {} but it is not there!", code),
+                        location.clone()
+                    );
+                    result.push(error);
+                }
+            }
+        },
+        None => {
+            let error = Disparity::new(
+                &format!("Expected that the endpoint define {} but it is not there!", code),
+                location.clone()
+            );
+            result.push(error);
+        }
+    }
+
+    result
+}
+
+
+
+
 
 
 fn main() {
-    // Set output text to yello
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow))).unwrap();
-
-    let config = CLIArgs::from_args();
+    let config = cli_args::config();
 
     let spec = Spec::from_filename(&config.filename);
  //   let definitions = spec::extract_definitions(&spec);
  //   let global_parameters = spec::extract_global_parameters(&spec);
     let mut result = DisparityList::new();
-    let mut service = Service::new(&config, &spec.spec.base_path);
+    let service = Service::new(&config, &spec.spec.base_path);
 
 //    let bar = ProgressBar::new(spec.paths.len() as u64);
+
+  //  let paths = spec.spec.paths.clone();
+    // let looks_like_create = paths.iter().filter(|&(path, methods)|
+    //     methods.post.is_some() &&
+    //     path.chars().last().is_some() &&
+    //     path.chars().last().unwrap() !='}'
+    // );
+
+    // let mut operations: BTreeMap<String, (String, openapi::v2::PathItem)> = BTreeMap::new();
+    // for (path_name, methods) in paths.clone() {
+    //     if methods.post.is_some() && methods.clone().post.unwrap().operation_id.is_some() {
+    //         let operation_id = methods.clone().post.unwrap().operation_id.unwrap();
+    //         let resource = operation_id.split(".").nth(0).unwrap().to_string();
+    //         operations.insert(resource, (path_name.clone(), methods.clone()));
+    //     }
+    //     if methods.get.is_some() && methods.clone().get.unwrap().operation_id.is_some() {
+    //         let operation_id = methods.clone().get.unwrap().operation_id.unwrap();
+    //         let resource = operation_id.split(".").nth(0).unwrap().to_string();
+    //         operations.insert(resource, (path_name.clone(), methods.clone()));
+    //     }
+    //     if methods.delete.is_some() && methods.clone().delete.unwrap().operation_id.is_some() {
+    //         let operation_id = methods.clone().delete.unwrap().operation_id.unwrap();
+    //         let resource = operation_id.split(".").nth(0).unwrap().to_string();
+    //         operations.insert(resource, (path_name.clone(), methods.clone()));
+    //     }
+    // }
+
+    // for (resource, &(path_name, methods)) in operations.iter() {
+    //     if methods.post.is_some() {
+
+    //     }
+    // }
+
+
+
+// /*
+
+
+
+//     impl Mutation {
+//         fn success_no_query(path_name: &str) {
+//             // 200 + There must be always at least a success response in an index
+//             let mut location = Location::new(vec![path_name, "get", "200"]);
+//             println!("Calling {} with no parameters. Expecting 200.", &path_name);
+//             let real_response = service.call_success(path_name, None);
+// //            result.merge(check_and_validate(&spec, &methods, "200", &real_response, StatusCode::OK, &mut location));
+//             let new_result = check_and_validate(&spec, &methods, "200", &real_response, StatusCode::OK, &mut location);            
+//         }
+//     }
+
 
     for (path_name, methods) in spec.spec.paths.iter() {
 //        bar.inc(1);
@@ -277,60 +329,57 @@ fn main() {
         // checked = checked + 1;
         // pb.set_position(checked);
         if looks_like_index(&spec, path_name, &methods) {
-            // 200 + There must be always at least a success response in an index
-            let defined_200 = spec::method_status_info(methods, "200").expect(&format!("Path {} without 200", path_name));
-            let schema = spec::extract_schema(&defined_200).unwrap();
-            let mut location = Location::new(vec![path_name, "get", "200"]);
-            let real_response = service.call_success(path_name, None);
+            println!("\n \n TEST ****  {:?} ****", path_name);
 
-            match real_response.value {
-                Ok(body) => {
-                    if !result.option_push(check_status(real_response.status, StatusCode::Ok, &location)) {
-                        result.merge(validate(&spec, &schema, &body, &mut location));
-                    }
-                },
-                Err(_) => result.push(json_error(&location))
+            //TODO: Only get the mutations for index.
+            for mutation in mutation::mutations().iter() {
+                println!("In testing area");
+                //TODO: check index mutations only
+                let mut location = Location::new(vec![path_name, &mutation.method, &mutation.defined_code]);
+                let real_response = service.call_success(path_name, mutation::make_query_params(mutation.query_params));
+                let new_result = check_and_validate(&spec, &methods, mutation.defined_code, &real_response, mutation.expected, &mut location);
+                cli::print_success(new_result);
             }
 
-            // 200 + Adding random parameters should break nothing
-            let mut location = Location::new(vec![path_name, "get", "200", "adding_unknown_param"]);
-            let real_response = service.call_success(path_name, Some(("trusmis", "mumi")));
-            match real_response.value {
-                Ok(body) => {
-                    result.option_push(check_status(real_response.status, StatusCode::Ok, &location));
-                    result.merge(validate(&spec, &schema, &body, &mut location));
-                },
-                Err(_) => result.push(json_error(&location))
-            }
+//             // 200 + There must be always at least a success response in an index
+//             let mut location = Location::new(vec![path_name, "get", "200"]);
+//             println!("Calling {} with no parameters. Expecting 200.", &path_name);
+//             let real_response = service.call_success(path_name, None);
+// //            result.merge(check_and_validate(&spec, &methods, "200", &real_response, StatusCode::OK, &mut location));
+//             let new_result = check_and_validate(&spec, &methods, "200", &real_response, StatusCode::OK, &mut location);
+//             // match new_result {
+//             //     None => print_color("Test passed.", Color::Green),
+//             //     Some(failure) => print_color(failure, Color::Green),
+//             // }
+//             cli::print_error("test");
+
+//             cli::print_success(new_result);
+//            // println!("{}", new_result);
+
+//             // 200 + Adding random parameters should break nothing
+//             let mut location = Location::new(vec![path_name, "get", "200", "adding_unknown_param"]);
+//             println!("Calling {} with extra unknown parameters. Expecting 200.", &path_name);
+//             let real_response = service.call_success(path_name, Some(("trusmis", "mumi")));
+//            // result.merge(check_and_validate(&spec, &methods, "200", &real_response, StatusCode::OK, &mut location));
+//             let new_result = check_and_validate(&spec, &methods, "200", &real_response, StatusCode::OK, &mut location);
+//             cli::print_error(new_result);
 
             // 200 + allowed parameter with proper value should break nothing
-            match get_proper_param(&spec, &methods) {
+            match request_params::get_proper_param(&spec, &methods) {
                 Some(param) => {
                     let mut location = Location::new(vec![path_name, "get", "200", "adding proper param", &param.name]);
                     let real_response = service.call_success(path_name, Some((&param.name, &param.value)));
-                    match real_response.value {
-                        Ok(body) => {
-                            result.option_push(check_status(real_response.status, StatusCode::Ok, &location));
-                            result.merge(validate(&spec, &schema, &body, &mut location));
-                        },
-                        Err(_) => result.push(json_error(&location))
-                    }
+                    result.merge(check_and_validate(&spec, &methods, "200", &real_response, StatusCode::OK, &mut location));
                 },
                 None => {},
             }
 
             // 200 + allowed parameter with a wrong value should give a 422
-            match get_proper_param(&spec, &methods) {
+            match request_params::get_proper_param(&spec, &methods) {
                 Some(param) => {
-                    let mut location = Location::new(vec![path_name, "get", "200", "adding improper param", &param.name]);
+                    let mut location = Location::new(vec![path_name, "get", "422", "adding improper param", &param.name]);
                     let real_response = service.call_success(path_name, Some((&param.name, "nooooo")));
-                    match real_response.value {
-                        Ok(body) => {
-                            result.option_push(check_status(real_response.status, StatusCode::UnprocessableEntity, &location));
-                            result.merge(validate(&spec, &schema, &body, &mut location));
-                        },
-                        Err(_) => result.push(json_error(&location))
-                    }
+                    result.merge(check_and_validate(&spec, &methods, "422", &real_response, StatusCode::UNPROCESSABLE_ENTITY, &mut location));
                 },
                 None => {},
             }
@@ -367,54 +416,25 @@ fn main() {
             // }
 
             // 405
-            let mut location = Location::new(vec![path_name, "get", "200", "using_disallowed_method"]);
-            let method_name = spec::get_random_undefined_method(methods);
-            let real_response = service.call_with_method(path_name, &method_name);
+            // Rails can't do this
+            // let mut location = Location::new(vec![path_name, "get", "200", "using_disallowed_method"]);
+            // let method_name = spec::get_random_undefined_method(methods);
+            // let real_response = service.call_with_method(path_name, &method_name);
 
-            let failed_405 = check_status(real_response.status, StatusCode::MethodNotAllowed, &location);
-            result.option_push(failed_405);
+            // let failed_405 = check_status(real_response.status, StatusCode::MethodNotAllowed, &location);
+            // result.option_push(failed_405);
 
 
             //406
-            let defined_406 = spec::method_status_info(methods, "406");
-            let mut location = Location::new(vec![path_name, "get", "using_wrong_content_type"]);
-            let real_response = service.call_failed_content_type(path_name);
+            // let mut location = Location::new(vec![path_name, "get", "using_wrong_content_type"]);
+            // let real_response = service.call_failed_content_type(path_name);
+            // result.merge(check_and_validate(&spec, &methods, "406", &real_response, StatusCode::NOT_ACCEPTABLE, &mut location));
 
-            let failed_406 = check_status(real_response.status, StatusCode::NotAcceptable, &location);
-            result.option_push(failed_406.clone());
-
-            match defined_406 {
-                // 406 defined in the spec, this should be used for a wrong content type
-                Some(spec_response) => {
-                    result.option_push(check_status(real_response.status, StatusCode::NotAcceptable, &location));
-                    let error_schema = spec::extract_schema(&spec_response);
-                    match error_schema {
-                        Some(schema) => {
-                            // Assume every schema is json : TODO: support non-json schemas
-                            match real_response.value {
-                                Ok(body) => result.merge(validate(&spec, &schema, &body, &mut location)),
-                                Err(_) => result.push(json_error(&location)),
-                            }
-                        },
-                        None => {}
-                    }
-                },
-                // 406 not defined
-                None => {
-                    if failed_406.is_none() {
-                        let error = Disparity::new(
-                            &format!("Correctly got 406 response for a wrong content type but 406 is not defined in the file."),
-                            location.clone()
-                        );
-                        result.push(error);
-                    }
-                }
-            }
-
-            // 422
 
         }
     }
-    println!("{}", result);
-    service.kill();
+   // println!("{}", result);
+ //   */
+    // service.kill();
+
 }

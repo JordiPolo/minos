@@ -20,7 +20,7 @@ pub fn check_status(response_status: StatusCode, desired_status: StatusCode, loc
 
 // Checks that the response has values of the same type as specified in the schema
 pub fn check_response_type(value: &JsonValue, schema_type: &str, location: &Location) -> Option<Disparity> {
-    let is_match = match value {
+    let is_match = match *value {
         JsonValue::String(_) => {
             schema_type == "string"
         },

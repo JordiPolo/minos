@@ -4,16 +4,17 @@ version = "0.1.0"
 authors = ["Jordi Polo Carres <mumismo@gmail.com>"]
 
 [dependencies]
-regex = "0.2"
+regex = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-reqwest = "0.8"
+reqwest = "0.9"
 json = "*"
 structopt = "0.2"
 #indicatif = "0.9.0"
-termcolor = "0.3"
+termcolor = "1.0"
 
 [dependencies.openapi]
+#  path = "../openapi"
   git = "https://github.com/jordipolo/openapi"
-  rev = "9f9930bb71"
+  rev = "7f7a270"

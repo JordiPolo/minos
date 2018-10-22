@@ -5,6 +5,12 @@ use std::{thread::sleep, time::Duration, process::{Command, Child}};
 
 use cli_args::*;
 
+// pub struct QueryParam {
+//     key: String,
+//     value: String,
+// }
+
+pub type QueryParam<'a> = (&'a str, &'a str);
 
 pub struct Service {
     base_url: String,
@@ -24,14 +30,16 @@ impl Service {
         let server_command : Vec<&str> = config.server_command.split(" ").collect();
         let (command, arguments) = server_command.split_at(1);
 
-        let server = if config.server_run {
-            Some(Command::new(command[0]).args(arguments).spawn().expect("failed to execute the server."))
-        } else {
-            None
-        };
+        //TODO: make this work again
+        let server = None;
+        // let server = if config.server_run {
+        //     Some(Command::new(command[0]).args(arguments).spawn().expect("failed to execute the server."))
+        // } else {
+        //     None
+        // };
 
-        println!("Waiting {:?} seconds", &config.server_wait);
-        server.as_ref().map(|_| sleep(Duration::from_millis(config.server_wait * 1000)));
+     //   println!("Waiting {:?} seconds", &config.server_wait);
+     //   server.as_ref().map(|_| sleep(Duration::from_millis(config.server_wait * 1000)));
 
         let base_path = base_path_option.clone().unwrap_or("".to_string());
         let client = reqwest::Client::new();
@@ -42,7 +50,7 @@ impl Service {
         self.server.as_mut().map(|s| s.kill().expect("Service could not be killed, maybe it was not running (crashed?)"));
     }
 
-    pub fn call_success(&self, path: &str, query_params: Option<(&str, &str)>) -> ServiceResponse {
+    pub fn call_success(&self, path: &str, query_params: Option<QueryParam>) -> ServiceResponse {
         let endpoint = self.endpoint_param(path, "json", query_params);
     //    println!("Calling {:?}\n", endpoint);
 

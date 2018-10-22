@@ -7,6 +7,7 @@ pub struct Spec {
 
 impl Spec {
     pub fn from_filename(filename: &str) -> Self {
+        println!("{}",filename);
         let spec = match openapi::from_path(filename).unwrap() {
             openapi::OpenApi::V2(spec) => spec,
             openapi::OpenApi::V3_0(_) => {

@@ -71,7 +71,7 @@ impl StringFormat {
     }
 
     pub fn validate(&self, value: &str, location: &Location) -> Option<Disparity> {
-        match self {
+        match *self {
             StringFormat::Uuid => {
                 self.check_format_in_response(value, location, UUID_STRING, "UUID")
             }
