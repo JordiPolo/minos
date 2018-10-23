@@ -53,10 +53,26 @@ in different situations, including things like broken parameters, etc.
 
 Hopefully in the future Minos will be equal and superior to Dredd, ideally it will support the same hooks.
 
+# Tests
+## Index
+- Check response body on all calls. Implemented
+- No responses should return 500. Not implemented.
+- No params . Implemented
+- All required params. Not implemented
+- Extra unknown params. Implemented
+- Valid optional params. Implemented
+- Invalid optional params. Implemented
+- All combinations of params. Not implemented
+- Add extra unknown headers. Not implemented
+- Send parameters in their limits and outside their limits. Not implemented
+
+
 # TODO
 - Configuration file
 - 422 and invalid query parameters
 - Parametrized Paths
 - Support hooks
+
+
 
 

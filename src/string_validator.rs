@@ -1,6 +1,6 @@
+use disparity::*;
 use json::JsonValue;
 use openapi;
-use disparity::*;
 use regex::*;
 
 const UUID_STRING: &str =
@@ -18,18 +18,14 @@ impl StringValidator {
     pub fn new(value: &JsonValue, schema: &openapi::v2::Schema) -> Self {
         match value {
             // If we have a match, let's be more specific
-            &JsonValue::String(ref string) => {
-                StringValidator {
-                    response: string.to_owned(),
-                    format: StringFormat::new(schema),
-                }
-            }
-            &JsonValue::Short(ref short) => {
-                StringValidator {
-                    response: short.as_str().to_owned(),
-                    format: StringFormat::new(schema),
-                }
-            }
+            &JsonValue::String(ref string) => StringValidator {
+                response: string.to_owned(),
+                format: StringFormat::new(schema),
+            },
+            &JsonValue::Short(ref short) => StringValidator {
+                response: short.as_str().to_owned(),
+                format: StringFormat::new(schema),
+            },
             _ => {
                 panic!(
                     "We type checked, It is not possible that a string validator does not get a string"
@@ -98,11 +94,7 @@ impl StringFormat {
             None
         } else {
             Some(Disparity::new(
-                &format!(
-                    "The schema expects an {} but got {:?}",
-                    name,
-                    value
-                ),
+                &format!("The schema expects an {} but got {:?}", name, value),
                 location.clone(),
             ))
         }

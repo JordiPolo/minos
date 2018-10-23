@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter, Error};
+use std::fmt::{Display, Error, Formatter};
 
 #[derive(Debug, Clone)]
 pub struct Location {
@@ -7,14 +7,16 @@ pub struct Location {
 
 impl Location {
     pub fn new(pieces: Vec<&str>) -> Self {
-        Location { pieces: pieces.clone().into_iter().map(|a| a.to_string()).collect() }
+        Location {
+            pieces: pieces.clone().into_iter().map(|a| a.to_string()).collect(),
+        }
     }
 
     pub fn add(&self, piece: &str) -> Self {
         let mut new_location = self.clone();
         new_location.pieces.push(piece.to_string());
         new_location
-//        self.pieces.push(piece.to_string());
+        //        self.pieces.push(piece.to_string());
     }
 }
 
@@ -24,9 +26,6 @@ impl Display for Location {
         write!(f, "{}", output)
     }
 }
-
-
-
 
 #[derive(Debug, Clone)]
 pub struct Disparity {
@@ -59,6 +58,10 @@ impl DisparityList {
         DisparityList { inner: Vec::new() }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
     pub fn push(&mut self, dis: Disparity) {
         self.inner.push(dis);
     }
@@ -68,11 +71,12 @@ impl DisparityList {
     }
 
     pub fn merge(&mut self, other_list: DisparityList) {
-        other_list.inner.into_iter().for_each(|disparity| self.push(disparity));
+        other_list
+            .inner
+            .into_iter()
+            .for_each(|disparity| self.push(disparity));
     }
 }
-
-
 
 impl Display for DisparityList {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
