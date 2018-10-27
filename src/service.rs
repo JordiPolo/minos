@@ -13,8 +13,7 @@ use reqwest::Method;
 
 // TODO: tuple struct?
 // This is the query param as used by the service and in requests to make real calls.
-pub type QueryParam<'a> = (&'a str, &'a str);
-
+pub type QueryParam = (String, String);
 
 pub struct Service {
     base_url: String,
@@ -33,7 +32,8 @@ pub struct Request<'a> {
     pub path: &'a str,
     pub content_type: &'a str,
     pub method: &'a str,
-    pub query_params: Vec<QueryParam<'a>>,
+    pub query_params: Vec<QueryParam>,
+    pub path_params: Vec<String>,
 }
 
 impl<'a> Request<'a> {
@@ -43,6 +43,7 @@ impl<'a> Request<'a> {
             content_type: "json",
             method: "get",
             query_params: vec![],
+            path_params: vec![],
         }
     }
 
@@ -51,18 +52,23 @@ impl<'a> Request<'a> {
         self
     }
 
-    pub fn query_params(mut self, params: Vec<QueryParam<'a>>) -> Self {
+    pub fn query_params(mut self, params: Vec<QueryParam>) -> Self {
         self.query_params = params;
         self
     }
-    
+
     pub fn content_type(mut self, content_type: &'a str) -> Self {
         self.content_type = content_type;
         self
     }
-    
+
     pub fn set_method(mut self, method: &'a str) -> Self {
         self.method = method;
+        self
+    }
+
+    pub fn path_params(mut self, path_params: Vec<String>) -> Self {
+        self.path_params = path_params;
         self
     }
 
@@ -128,6 +134,7 @@ impl Service {
             .client
             .request(request.method(), &endpoint)
             .header(CONTENT_TYPE, request.content_type)
+            .header("x-mws-authentication", "MWS 5ff4257e-9c16-11e0-b048-0026bbfffe5e:ThJT3EMI7yjhWQVoTEHYQb15/BIKcgTsCnXlBFKTEnezl9bJQhnNRynE+dskJfiWSanCQOAB9/1e+IHk1U1FjKGPe4y")
             .send()
             .expect("The request to the endpoint failed.");
         let body = resp

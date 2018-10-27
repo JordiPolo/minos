@@ -24,17 +24,6 @@ If the defaults do not work for you or are using some other technology, you can 
 - -t <server_wait>      Timeout allowed for the service to startup [default: 6]
 
 
-# Scenarios
-
-- GET Index like paths with JSON Content-Type, expect 200
-- GET Index like paths with JSON Content-Type and unknown query parameters, expect 200
-- GET Index like paths with unknown Content-Type, expect 406
-- If 406 is defined for this endpoint, expect body to match definition
-
-In the future it will keep adding more parameters and headers variations to test the response of your endpoints
-in different situations, including things like broken parameters, etc.
-
-
 # Dredd comparison
 
 |                        | Minos | Dredd  |
@@ -53,10 +42,13 @@ in different situations, including things like broken parameters, etc.
 
 Hopefully in the future Minos will be equal and superior to Dredd, ideally it will support the same hooks.
 
-# Tests
+# Scenarios
+## General
+- Unknown Content-Type. Implemented
+- Unknown method. Implemented.
+
 ## Index
 - Check response body on all calls. Implemented
-- No responses should return 500. Not implemented.
 - No params . Implemented
 - All required params. Not implemented
 - Extra unknown params. Implemented
@@ -69,8 +61,7 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 
 # TODO
 - Configuration file
-- 422 and invalid query parameters
-- Parametrized Paths
+- Implement all scenarios
 - Support hooks
 
 

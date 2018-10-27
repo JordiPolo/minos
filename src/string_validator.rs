@@ -26,9 +26,14 @@ impl StringValidator {
                 response: short.as_str().to_owned(),
                 format: StringFormat::new(schema),
             },
+            // TODO: handle null case properly
+            &JsonValue::Null => StringValidator {
+                response: "null".to_owned(),
+                format: StringFormat::new(schema)
+            },
             _ => {
                 panic!(
-                    "We type checked, It is not possible that a string validator does not get a string"
+                    "We type checked, It is not possible that the value {:?} from {:?} is not a string", value, schema
                 );
             }
         }

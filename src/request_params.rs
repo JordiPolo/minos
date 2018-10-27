@@ -1,41 +1,63 @@
+use rand::Rng;
+
 use openapi;
 use spec::Spec;
 
 // This is the Spec Request param information and helper methods.
+#[derive(Clone)]
 pub struct RequestParam {
     pub name: String,
     pub value: String,
 }
 
-pub fn get_proper_param(spec: &Spec, methods: &openapi::v2::PathItem) -> Option<RequestParam> {
-    // Can unwrap because we are in the index method
-    let get_method = methods.clone().get.unwrap();
-    let params = match get_method.parameters {
+pub fn get_improper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<RequestParam> {
+    let params_with_types = get_only_params_with_types(spec, method);
+
+    // TODO: maybe I dont need result.
+    params_with_types.into_iter().map(|param|
+    {
+        let p_type = param.clone().param_type.unwrap();
+        let name = param.clone().name;
+        let result;
+        if p_type == "boolean" {result = RequestParam{name, value: "-1".to_string()};}
+        else if p_type == "integer"  {result = RequestParam{name, value: "NotAnIntegerhahahaha".to_string() };}
+        else  {result = RequestParam{name, value: "-1".to_string() };} //string case, not sure how to break it best
+        result
+    }).collect()
+}
+
+
+pub fn get_proper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<RequestParam> {
+    let params_with_types = get_only_params_with_types(spec, method);
+
+    let request_params = params_with_types.into_iter()
+        .filter(|x| {
+            let name = x.clone().name;
+            let p_type = x.clone().param_type.unwrap();
+            (p_type == "boolean" || p_type == "integer" || p_type == "string")
+                && (name != "page" && name != "per_page" && name != "include_count")
+        }).map(|param| to_request_param(&param));
+
+    request_params.collect()
+}
+
+
+fn get_only_params_with_types(spec: &Spec, method: &openapi::v2::Operation) -> Vec<openapi::v2::Parameter> {
+    let params = match &method.parameters {
         Some(param) => Some(param.into_iter().map(|p| resolve_parameter_ref(&spec, &p))),
         None => None,
     };
 
-    if params.is_none() {
-        return None;
+    match params {
+        None => vec![],
+        Some(ps) => {
+        ps
+            .into_iter()
+            .filter(|x| x.param_type.is_some())
+            .collect()
+        }
     }
-
-    let params_with_types = params
-        .unwrap()
-        .into_iter()
-        .filter(|x| x.param_type.is_some());
-
-    let mut request_params = params_with_types
-        .filter(|x| {
-            let name = x.clone().name;
-            let p_type = x.clone().param_type.unwrap();
-            let has_enums = x.clone().enum_values.is_some();
-            (p_type == "boolean" || p_type == "integer" || (p_type == "string" && has_enums))
-                && (name != "page" && name != "per_page" && name != "include_count")
-        }).map(|param| to_request_param(&param));
-
-    request_params.nth(0)
 }
-
 
 impl RequestParam {
     fn new(name: &str, value: &str) -> Self {
@@ -47,7 +69,7 @@ impl RequestParam {
 }
 
 // TODO: copied in main.rs
-fn resolve_parameter_ref(
+pub fn resolve_parameter_ref(
     spec: &Spec,
     param_or_ref: &openapi::v2::ParameterOrRef,
 ) -> openapi::v2::Parameter {
@@ -104,8 +126,8 @@ fn to_integer_request_param(param: &openapi::v2::Parameter) -> RequestParam {
 }
 
 fn to_string_enum_request_param(param: &openapi::v2::Parameter) -> RequestParam {
-    let enum_values = param.clone().enum_values.unwrap_or(vec!["1".to_string()]);
-    RequestParam::new(&param.name, enum_values.first().unwrap())
+    let enum_values = param.clone().enum_values.unwrap_or(vec!["string1".to_string()]);
+    RequestParam::new(&param.name, rand::thread_rng().choose(&enum_values).unwrap())
 }
 
 fn to_request_param(param: &openapi::v2::Parameter) -> RequestParam {
