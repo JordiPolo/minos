@@ -21,22 +21,17 @@ impl Spec {
         self.spec
             .definitions
             .clone()
-            .unwrap()
-            .get(&self.json_ref_name(&definition_name))
-            .unwrap()
+            .unwrap()[&self.json_ref_name(&definition_name)]
             .clone()
     }
 
     pub fn json_ref_name(&self, reference: &str) -> String {
-        reference.split("/").last().unwrap().to_owned()
+        reference.split('/').last().unwrap().to_owned()
     }
 
     pub fn resolve_parameter(&self, parameter_name: &str) -> openapi::v2::Parameter {
         let global_params = self.spec.parameters.clone().unwrap();
-        global_params
-            .get(&self.json_ref_name(&parameter_name))
-            .unwrap()
-            .clone()
+        global_params[&self.json_ref_name(&parameter_name)].clone()
     }
 }
 
@@ -47,4 +42,3 @@ impl Spec {
 //         "put".to_string()
 //     }
 // }
-

@@ -16,20 +16,20 @@ pub struct StringValidator {
 
 impl StringValidator {
     pub fn new(value: &JsonValue, schema: &openapi::v2::Schema) -> Self {
-        match value {
+        match *value {
             // If we have a match, let's be more specific
-            &JsonValue::String(ref string) => StringValidator {
+            JsonValue::String(ref string) => StringValidator {
                 response: string.to_owned(),
                 format: StringFormat::new(schema),
             },
-            &JsonValue::Short(ref short) => StringValidator {
+            JsonValue::Short(ref short) => StringValidator {
                 response: short.as_str().to_owned(),
                 format: StringFormat::new(schema),
             },
             // TODO: handle null case properly
-            &JsonValue::Null => StringValidator {
+            JsonValue::Null => StringValidator {
                 response: "null".to_owned(),
-                format: StringFormat::new(schema)
+                format: StringFormat::new(schema),
             },
             _ => {
                 panic!(
@@ -79,10 +79,10 @@ impl StringFormat {
             StringFormat::None => self.check_really_unknown_response(value, location),
             StringFormat::Date => {
                 self.check_format_in_response(value, location, DATE_STRING, "date")
-            }
+            },
             StringFormat::DateTime => {
                 self.check_format_in_response(value, location, DATETIME_STRING, "date time")
-            }
+            },
             StringFormat::Unknown => None,
         }
     }

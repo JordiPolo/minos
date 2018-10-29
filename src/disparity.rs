@@ -37,7 +37,7 @@ impl Disparity {
     pub fn new(message: &str, location: Location) -> Self {
         Disparity {
             message: message.to_string(),
-            location: location,
+            location,
         }
     }
 }

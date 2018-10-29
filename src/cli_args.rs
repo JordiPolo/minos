@@ -20,7 +20,8 @@ pub struct CLIArgs {
 
     /// Needed parameter, the first on the command line.
     #[structopt(
-        short = "b",
+        short = "url",
+        long = "url",
         help = "URL where the server is running (it can also be in localhost)",
         default_value = "http://localhost:3000"
     )]
@@ -28,6 +29,7 @@ pub struct CLIArgs {
 
     #[structopt(
         short = "s",
+        long = "server",
         help = "Command to use to launch server",
         default_value = "bundle exec rails server"
     )]
@@ -35,10 +37,12 @@ pub struct CLIArgs {
 
     #[structopt(
         short = "t",
+        long = "timeout",
         help = "Timeout allowed for the service to startup",
         default_value = "10"
     )]
     pub server_wait: u64,
-    //  #[structopt(short = "rs", help = "Runs the server itself or not", default_value = "true")]
-    //  pub server_run: bool,
+
+    #[structopt(long = "run_server", help = "Runs the server itself or not")]
+    pub server_run: bool,
 }

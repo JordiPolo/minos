@@ -17,5 +17,5 @@ fn print_color(error: impl Display, color: Color) {
         .unwrap();
     writeln!(output, "{}", error);
     output.reset().unwrap();
-    println!("");
+    println!();
 }

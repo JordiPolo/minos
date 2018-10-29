@@ -1,12 +1,12 @@
+use operation::CRUD;
 use reqwest::StatusCode;
 use service::QueryParam;
-use operation::CRUD;
 
 pub enum QueryParamMutation {
     Static(QueryParam),
     Proper,
     Wrong,
-//    Empty, what would happen in this case?
+    //    Empty, what would happen in this case?
 }
 
 pub struct Mutation<'a> {
@@ -20,10 +20,11 @@ pub struct Mutation<'a> {
 }
 
 impl<'a> Mutation<'a> {
-
     pub fn is_application_defined_code(&self) -> bool {
         let appplication_codes = vec!["200", "400", "403", "404", "409", "422", "423"];
-        appplication_codes.iter().find(|&&code| code == self.defined_code).is_some()
+        appplication_codes
+            .iter()
+            .any(|&code| code == self.defined_code)
     }
     // pub fn is_middleware_code(&self) -> bool {
     //     let appplication_codes = vec!["401", "500"];
@@ -35,9 +36,11 @@ impl<'a> Mutation<'a> {
 }
 
 pub fn mutations_for_crud<'a>(crud: CRUD) -> Vec<Mutation<'a>> {
-    mutations().into_iter().filter(|mutation| mutation.crud_operation == crud).collect()
+    mutations()
+        .into_iter()
+        .filter(|mutation| mutation.crud_operation == crud)
+        .collect()
 }
-
 
 pub fn mutations<'a>() -> Vec<Mutation<'a>> {
     vec![
@@ -55,7 +58,10 @@ pub fn mutations<'a>() -> Vec<Mutation<'a>> {
             content_type: "json",
             method: "GET",
             crud_operation: CRUD::Index,
-            query_params: Some(QueryParamMutation::Static(("trusmis".to_string(), "mumi".to_string()))),
+            query_params: Some(QueryParamMutation::Static((
+                "trusmis".to_string(),
+                "mumi".to_string(),
+            ))),
             defined_code: "200",
             expected: StatusCode::OK,
             explanation: "GET with extra unknown parameters, should be ignored trusmis=mumi",

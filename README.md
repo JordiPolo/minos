@@ -1,27 +1,33 @@
 
 This is a CLI tool ~~copying~~ heavily inspired on [Dredd](https://github.com/apiaryio/dredd)
 
-It test your OpenAPI file definition, executing requests as specified there against the live server responses.
-It is opinionated and expects the OpenAPI file to follow best practices with respect to responses.
+It generates requests based on the information in the OpenAPI file describing the service's API.
+It runs them against a live service and compares the responses.
+As opposed to Dredd, Minos not only validates correct responses, but executes edge cases and incorrect cases also. See the [Scenarios](#Scenarios) for details.
+
+Minos is opinionated and expects the OpenAPI file and the service to follow best practices.
 
 # Installation
 
-Download the latest version for your system of the pre-compiled packages from the releases section.
-Copy the binary where it is convenient for you to execute it.
+Download the [latest release](https://github.com/jordipolo/minos/releases/latest) for your system.
+Copy them in the directory of the project or in a directory on your PATH.
+These are static binaries, they have zero dependencies and can run in any system without additional software.
 
 # Usage
 
 If you are using Rails, simply run:
 ```
-minos
+minos --run_server
 ```
 
 If the defaults do not work for you or are using some other technology, you can customize minos:
 - -b <base_url>         URL where the server is running [default: http://localhost:3000]
 - -f <filename>         Input OpenAPI file [default: doc/contracts/openapi.yaml]
+
+In CI, it is often useful for minos to start the application server.
 - -s <server_command>   Command to use to launch server [default: bundle exec rails server]
-- -r <server_run>       Runs the server itself or not [default: true]
-- -t <server_wait>      Timeout allowed for the service to startup [default: 6]
+- --run_server          Makes Minos starts and stops the server by issueing the server command and waiting the timeout
+- -t <server_wait>      Timeout allowed for the service to startup [default: 10]
 
 
 # Dredd comparison
@@ -49,7 +55,7 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 
 ## Index
 - Check response body on all calls. Implemented
-- No params . Implemented
+- No params. Implemented
 - All required params. Not implemented
 - Extra unknown params. Implemented
 - Valid optional params. Implemented

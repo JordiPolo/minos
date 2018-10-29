@@ -2,6 +2,8 @@ use rand::Rng;
 
 use openapi;
 use spec::Spec;
+use mutation::QueryParamMutation;
+use operation;
 
 // This is the Spec Request param information and helper methods.
 #[derive(Clone)]
@@ -10,27 +12,75 @@ pub struct RequestParam {
     pub value: String,
 }
 
-pub fn get_improper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<RequestParam> {
-    let params_with_types = get_only_params_with_types(spec, method);
 
-    // TODO: maybe I dont need result.
-    params_with_types.into_iter().map(|param|
-    {
-        let p_type = param.clone().param_type.unwrap();
-        let name = param.clone().name;
-        let result;
-        if p_type == "boolean" {result = RequestParam{name, value: "-1".to_string()};}
-        else if p_type == "integer"  {result = RequestParam{name, value: "NotAnIntegerhahahaha".to_string() };}
-        else  {result = RequestParam{name, value: "-1".to_string() };} //string case, not sure how to break it best
-        result
-    }).collect()
+pub fn get_path_params(crud: &operation::CRUD) -> Vec<String> {
+    if crud == &operation::CRUD::Show {
+        vec!["26b4cdb0-64fa-45e9-9608-13fb9bdcca20".to_string()]
+    } else {
+        vec![]
+    }
+}
+
+pub fn make_query_params(
+    spec: &Spec,
+    method: &openapi::v2::Operation,
+    query_params: &Option<QueryParamMutation>,
+) -> Option<Vec<RequestParam>> {
+    match query_params {
+        None => Some(vec![]),
+        Some(param) => match param {
+            QueryParamMutation::Static(the_param) => Some(vec![RequestParam {
+                name: the_param.0.to_string(),
+                value: the_param.1.to_string(),
+            }]),
+            QueryParamMutation::Proper => Some(get_proper_param(&spec, method)),
+            // TODO: properly find wrong parameter here
+            QueryParamMutation::Wrong => Some(get_improper_param(&spec, method)),
+            // QueryParamMutation::Empty => {
+            //     let proper_params = request_params::get_proper_param(&spec, method);
+            //     let result = proper_params.into_iter().map(|mut param| {param.value = "".to_string(); param }).collect();
+            //     Some(result)
+            // }
+        },
+    }
 }
 
 
-pub fn get_proper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<RequestParam> {
+fn get_improper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<RequestParam> {
     let params_with_types = get_only_params_with_types(spec, method);
 
-    let request_params = params_with_types.into_iter()
+    // TODO: maybe I dont need result.
+    params_with_types
+        .into_iter()
+        .map(|param| {
+            let p_type = param.clone().param_type.unwrap();
+            let name = param.clone().name;
+            let result;
+            if p_type == "boolean" {
+                result = RequestParam {
+                    name,
+                    value: "-1".to_string(),
+                };
+            } else if p_type == "integer" {
+                result = RequestParam {
+                    name,
+                    value: "NotAnIntegerhahahaha".to_string(),
+                };
+            } else {
+                result = RequestParam {
+                    name,
+                    value: "-1".to_string(),
+                };
+            } //string case, not sure how to break it best
+            result
+        }).collect()
+}
+
+fn get_proper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<RequestParam> {
+    let params_with_types = get_only_params_with_types(spec, method);
+
+    let request_params = params_with_types
+        .into_iter()
         .filter(|x| {
             let name = x.clone().name;
             let p_type = x.clone().param_type.unwrap();
@@ -41,8 +91,10 @@ pub fn get_proper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<Req
     request_params.collect()
 }
 
-
-fn get_only_params_with_types(spec: &Spec, method: &openapi::v2::Operation) -> Vec<openapi::v2::Parameter> {
+fn get_only_params_with_types(
+    spec: &Spec,
+    method: &openapi::v2::Operation,
+) -> Vec<openapi::v2::Parameter> {
     let params = match &method.parameters {
         Some(param) => Some(param.into_iter().map(|p| resolve_parameter_ref(&spec, &p))),
         None => None,
@@ -50,12 +102,7 @@ fn get_only_params_with_types(spec: &Spec, method: &openapi::v2::Operation) -> V
 
     match params {
         None => vec![],
-        Some(ps) => {
-        ps
-            .into_iter()
-            .filter(|x| x.param_type.is_some())
-            .collect()
-        }
+        Some(ps) => ps.filter(|x| x.param_type.is_some()).collect(),
     }
 }
 
@@ -120,14 +167,20 @@ fn to_integer_request_param(param: &openapi::v2::Parameter) -> RequestParam {
     let max = param.maximum.unwrap_or(100);
     let mut value: i32 = (min + max) / 2;
     if value == default && value < max {
-        value = value + 1;
+        value += 1;
     }
     RequestParam::new(&param.name, &format!("{:?}", value))
 }
 
 fn to_string_enum_request_param(param: &openapi::v2::Parameter) -> RequestParam {
-    let enum_values = param.clone().enum_values.unwrap_or(vec!["string1".to_string()]);
-    RequestParam::new(&param.name, rand::thread_rng().choose(&enum_values).unwrap())
+    let enum_values = param
+        .clone()
+        .enum_values
+        .unwrap_or(vec!["string1".to_string()]);
+    RequestParam::new(
+        &param.name,
+        rand::thread_rng().choose(&enum_values).unwrap(),
+    )
 }
 
 fn to_request_param(param: &openapi::v2::Parameter) -> RequestParam {

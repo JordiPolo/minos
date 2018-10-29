@@ -1,29 +1,30 @@
 extern crate json;
 extern crate openapi;
+extern crate rand;
 extern crate regex;
 extern crate reqwest;
 extern crate serde_json;
 extern crate structopt;
 extern crate termcolor;
 extern crate uuid;
-extern crate rand;
 
-mod disparity;
 mod checkers;
-mod string_validator;
-mod service;
-mod spec;
 mod cli;
 mod cli_args;
+mod disparity;
 mod mutation;
-mod request_params;
 mod operation;
+mod request_params;
+mod service;
+mod spec;
+mod string_validator;
 
 use checkers::check_status;
-use service::{Service, ServiceResponse, Request};
+use disparity::{Disparity, DisparityList, Location};
+use service::{Request, Service, ServiceResponse};
 use spec::Spec;
-use disparity::{Disparity, Location, DisparityList};
-
+use request_params::make_query_params;
+use request_params::get_path_params;
 
 fn json_error(location: &Location) -> Disparity {
     Disparity::new(
@@ -43,26 +44,30 @@ fn check_and_validate(
     mutation: &mutation::Mutation,
     // code: &str,
     // status: reqwest::StatusCode,
-    mut location: &mut Location,
+    location: &mut Location,
 ) -> DisparityList {
     let mut result = DisparityList::new();
     let defined_code = method.responses.get(mutation.defined_code);
 
-    let failed = result.option_push(check_status(real_response.status, mutation.expected, &location));
-    if failed { return result; }
+    let failed = result.option_push(check_status(
+        real_response.status,
+        mutation.expected,
+        &location,
+    ));
+    if failed {
+        return result;
+    }
 
     match defined_code {
         Some(defined) => {
             match &defined.schema {
-                Some(schema) => {
-                    match real_response.value {
-                        Ok(ref body) => {
-                            let my_schema = schema::Schema::new(spec.clone(), schema.clone());
-                            result.merge(my_schema.validate(&body, &mut location));
-                        }
-                        Err(_) => result.push(json_error(&location)),
+                Some(schema) => match real_response.value {
+                    Ok(ref body) => {
+                        let my_schema = schema::Schema::new(spec.clone(), schema.clone());
+                        result.merge(my_schema.validate(&body, &location));
                     }
-                }
+                    Err(_) => result.push(json_error(&location)),
+                },
                 None => {
                     let error = Disparity::new(
                         &format!("Expected that the endpoint to have a schema for {} but it is not there!", mutation.defined_code),
@@ -73,7 +78,8 @@ fn check_and_validate(
             }
         }
         None => {
-             if mutation.is_application_defined_code() && (real_response.status == mutation.expected) {
+            if mutation.is_application_defined_code() && (real_response.status == mutation.expected)
+            {
                 let error = Disparity::new(
                     &format!(
                         "The application responded with {} but the code is not documented in the openapi file!",
@@ -82,43 +88,14 @@ fn check_and_validate(
                     location.clone(),
                 );
                 result.push(error);
-             }
+            }
         }
     };
 
     result
 }
 
-use mutation::QueryParamMutation;
-
-pub fn make_query_params<'a>(
-    spec: &Spec,
-    method: &openapi::v2::Operation,
-    query_params: &Option<QueryParamMutation>,
-) -> Option<Vec<request_params::RequestParam>> {
-    match query_params {
-        None => Some(vec![]),
-        Some(param) => match param {
-            QueryParamMutation::Static(the_param) => Some(vec![request_params::RequestParam{name: the_param.0.to_string(), value: the_param.1.to_string()}]),
-            QueryParamMutation::Proper => Some(request_params::get_proper_param(&spec, method)),
-            // TODO: properly find wrong parameter here
-            QueryParamMutation::Wrong => Some(request_params::get_improper_param(&spec, method)),
-            // QueryParamMutation::Empty => {
-            //     let proper_params = request_params::get_proper_param(&spec, method);
-            //     let result = proper_params.into_iter().map(|mut param| {param.value = "".to_string(); param }).collect();
-            //     Some(result)
-            // }
-        },
-    }
-}
-
-fn get_params(crud: &operation::CRUD) -> Vec<String> {
-    if crud == &operation::CRUD::Show {
-        vec!["26b4cdb0-64fa-45e9-9608-13fb9bdcca20".to_string()]
-    } else {vec![]}
-}
-
-
+//TODO: bring server back
 fn main() {
     let config = cli_args::config();
     let spec = Spec::from_filename(&config.filename);
@@ -141,24 +118,27 @@ fn main() {
                         &mutation.content_type,
                     ]);
 
-                    let query_params = make_query_params(&spec, &operation.method, &mutation.query_params);
-
-                    // No valid query params could be created to fulfill what this mutation
-                    // wants to test so we just skip this one
-                    if query_params.is_none() {
-                        continue;
-                    }
-                    let request_parameters = query_params.unwrap().clone().into_iter().map(|param| (param.name, param.value)).collect();
+                    let request_parameters =
+                        match make_query_params(&spec, &operation.method, &mutation.query_params) {
+                            // No valid query params could be created to fulfill what this mutation
+                            // wants to test so we just skip this one
+                            None => continue,
+                            Some(query_params) => query_params
+                                .into_iter()
+                                .map(|param| (param.name, param.value))
+                                .collect(),
+                        };
 
                     println!("{}", mutation.explanation);
-                     println!("{:?}", request_parameters);
+                    // println!("{:?}", request_parameters);
 
                     let request = Request::new()
                         .path(path_name)
                         .query_params(request_parameters)
                         .content_type(mutation.content_type)
                         .set_method(mutation.method)
-                        .path_params(get_params(&mutation.crud_operation));
+                        .path_params(get_path_params(&mutation.crud_operation));
+
                     let real_response = service.send(&request);
 
                     let disparities = check_and_validate(
@@ -177,9 +157,7 @@ fn main() {
                 }
             }
         }
-
     }
     // println!("{}", result);
     //   */
-    // service.kill();
 }

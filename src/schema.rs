@@ -1,14 +1,14 @@
+use disparity::{Disparity, DisparityList, Location};
+use json::JsonValue;
 use openapi;
 use spec;
-use disparity::{DisparityList, Location, Disparity};
-use json::JsonValue;
 
 use checkers::*;
 use string_validator::*;
 
 //TODO: move somewhere else
 fn json_ref_name(reference: &str) -> String {
-    reference.split("/").last().unwrap().to_owned()
+    reference.split('/').last().unwrap().to_owned()
 }
 
 // Move validation of schema here
@@ -19,16 +19,13 @@ pub struct Schema {
 
 impl Schema {
     pub fn new(spec: spec::Spec, schema: openapi::v2::Schema) -> Self {
-        Schema {spec, schema}
+        Schema { spec, schema }
     }
 
     // TODO: convert this to return errors and return errors instead of the early crappy return of disparities
     // TODO: many many clone()!
     // TODO: check for nulls
-    pub fn validate(&self,
-        response: &JsonValue,
-        location: &Location,
-    ) -> DisparityList {
+    pub fn validate(&self, response: &JsonValue, location: &Location) -> DisparityList {
         let spec = self.spec.clone();
         let schema = self.schema.clone();
         let mut disparities = DisparityList::new();
@@ -67,10 +64,8 @@ impl Schema {
                 let new_location = location.clone().add(&json_ref_name(&definition_name));
                 let new_schema = Schema::new(spec, definition);
 
-                disparities.merge(new_schema.validate(
-                    &response.members().as_slice()[0],
-                    &new_location,
-                ));
+                disparities
+                    .merge(new_schema.validate(&response.members().as_slice()[0], &new_location));
             } else {
                 // let schema_type = &items.schema_type;
                 //    println!("TODO: Support arrays of strings, etc.");
@@ -83,10 +78,9 @@ impl Schema {
                 match property_schema {
                     Some(new_schema) => {
                         let rerew_schema = Schema::new(spec.clone(), new_schema.clone());
-                        disparities.merge(rerew_schema.validate(
-                            property_value,
-                            &location.add(property_name),
-                        ));
+                        disparities.merge(
+                            rerew_schema.validate(property_value, &location.add(property_name)),
+                        );
                     }
                     None => {
                         let error = Disparity::new(
@@ -124,5 +118,4 @@ impl Schema {
 
         disparities
     }
-
 }

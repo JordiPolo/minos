@@ -61,8 +61,8 @@ pub fn check_number_format(
     _schema: &openapi::v2::Schema,
     _location: &Location,
 ) -> Option<Disparity> {
-    match value {
-        &JsonValue::Number(_) => None,
+    match *value {
+        JsonValue::Number(_) => None,
         _ => {
             panic!("We check the type before, this can't happen.");
             // Some(Disparity::new(
