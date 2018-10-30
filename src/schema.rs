@@ -1,17 +1,11 @@
 use disparity::{Disparity, DisparityList, Location};
 use json::JsonValue;
 use openapi;
-use spec;
 
+use spec;
 use checkers::*;
 use string_validator::*;
 
-//TODO: move somewhere else
-fn json_ref_name(reference: &str) -> String {
-    reference.split('/').last().unwrap().to_owned()
-}
-
-// Move validation of schema here
 pub struct Schema {
     pub spec: spec::Spec,
     pub schema: openapi::v2::Schema,
@@ -32,7 +26,7 @@ impl Schema {
 
         if schema.schema_type.is_none() {
             println!(
-                "We could not find a type at location {:?}. Types must always be specified.",
+                "We could not find a type at location {:?}. Types must always be specified in the OpenAPI file.",
                 location
             );
             return disparities;
@@ -61,7 +55,7 @@ impl Schema {
                 let definition_name = items.ref_path.clone().unwrap();
                 let definition = spec.resolve_definition(&definition_name);
                 //let definition = definitions.get(&json_ref_name(&definition_name)).unwrap().clone();
-                let new_location = location.clone().add(&json_ref_name(&definition_name));
+                let new_location = location.clone().add(&spec.json_ref_name(&definition_name));
                 let new_schema = Schema::new(spec, definition);
 
                 disparities
@@ -107,10 +101,13 @@ impl Schema {
         } else if s_type == "string" {
             let validator = StringValidator::new(response, &schema);
             disparities.option_push(validator.validate(&location));
-        } else if s_type == "number" {
+        } else if s_type == "number" || s_type == "integer" {
             //float and double
             disparities.option_push(check_number_format(response, &schema, &location));
-        } else {
+        } else if s_type == "boolean"{
+            () // TODO: What do we need to check here?
+        }
+        else {
             panic!("Unknown type {:?}", s_type);
         }
         //         JsonValue::Boolean(boolean) => {},

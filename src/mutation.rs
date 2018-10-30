@@ -14,7 +14,6 @@ pub struct Mutation<'a> {
     pub method: &'a str,
     pub crud_operation: CRUD,
     pub query_params: Option<QueryParamMutation>,
-    pub defined_code: &'a str,
     pub expected: StatusCode,
     pub explanation: &'a str,
 }
@@ -46,61 +45,55 @@ pub fn mutations<'a>() -> Vec<Mutation<'a>> {
     vec![
         // Index mutations
         Mutation {
-            content_type: "json",
+            content_type: "application/json",
             method: "GET",
             crud_operation: CRUD::Index,
             query_params: None,
-            defined_code: "200",
             expected: StatusCode::OK,
-            explanation: "GET with no parameters",
+            explanation: "GET index with no parameters",
         },
         Mutation {
-            content_type: "json",
+            content_type: "application/json",
             method: "GET",
             crud_operation: CRUD::Index,
             query_params: Some(QueryParamMutation::Static((
                 "trusmis".to_string(),
                 "mumi".to_string(),
             ))),
-            defined_code: "200",
             expected: StatusCode::OK,
-            explanation: "GET with extra unknown parameters, should be ignored trusmis=mumi",
+            explanation: "GET with extra unknown parameters <trusmis=mumi>",
         },
         Mutation {
-            content_type: "json",
+            content_type: "application/json",
             method: "GET",
             crud_operation: CRUD::Index,
             query_params: Some(QueryParamMutation::Proper),
-            defined_code: "200",
             expected: StatusCode::OK,
             explanation: "GET with extra known and proper parameters",
         },
         Mutation {
-            content_type: "json",
+            content_type: "application/json",
             method: "GET",
             crud_operation: CRUD::Index,
             query_params: Some(QueryParamMutation::Wrong),
-            defined_code: "422",
             expected: StatusCode::UNPROCESSABLE_ENTITY,
-            explanation: "GET with extra known but with ilegal parameters",
+            explanation: "GET with extra known but with improper parameters",
         },
         Mutation {
-            content_type: "jason",
+            content_type: "minosTest/jason",
             method: "GET",
             crud_operation: CRUD::Index,
             query_params: None,
-            defined_code: "406", //TODO: this probably does not make sense, as it will never be defined usually
-            expected: StatusCode::NOT_ACCEPTABLE,
-            explanation: "GET with wrong content-type jason",
+            expected: StatusCode::NOT_ACCEPTABLE, //TODO: this probably does not make sense, as it will never be defined usually
+            explanation: "GET with wrong content-type <jason>",
         },
         Mutation {
-            content_type: "json",
+            content_type: "application/json",
             method: "TRACE",
             crud_operation: CRUD::Index,
             query_params: None,
-            defined_code: "405",
             expected: StatusCode::METHOD_NOT_ALLOWED,
-            explanation: "GET with wrong method TRACE",
+            explanation: "GET with wrong method <TRACE>",
         },
     ]
 }

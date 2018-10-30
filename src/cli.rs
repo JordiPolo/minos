@@ -10,6 +10,10 @@ pub fn print_error(error: impl Display) {
     print_color(error, Color::Red);
 }
 
+pub fn print_scenario(message: impl Display) {
+    print_color(message, Color::Blue);
+}
+
 fn print_color(error: impl Display, color: Color) {
     let mut output = StandardStream::stdout(ColorChoice::Auto);
     output
@@ -17,5 +21,4 @@ fn print_color(error: impl Display, color: Color) {
         .unwrap();
     writeln!(output, "{}", error);
     output.reset().unwrap();
-    println!();
 }

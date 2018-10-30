@@ -13,6 +13,7 @@ pub struct CLIArgs {
     /// Needed parameter, the first on the command line.
     #[structopt(
         short = "f",
+        long = "file",
         help = "Input OpenAPI file",
         default_value = "doc/contracts/openapi.yaml"
     )]

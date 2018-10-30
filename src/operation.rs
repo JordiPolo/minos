@@ -28,38 +28,36 @@ impl Operation {
         // if Operation::looks_like_index(spec, path_name, methods) {
         //     Some(Operation::new(CRUD::Index, methods.clone().get.unwrap()))
         // } else { None }
-        match Operation::url_ends_in_variable(path_name) {
-            true => {
-                let maybe_get = methods
-                    .get
-                    .clone()
-                    .map(|get| Operation::new(CRUD::Show, get));
-                let maybe_put = methods
-                    .put
-                    .clone()
-                    .map(|put| Operation::new(CRUD::Update, put));
-                let maybe_patch = methods
-                    .patch
-                    .clone()
-                    .map(|patch| Operation::new(CRUD::Patch, patch));
-                let maybe_delete = methods
-                    .delete
-                    .clone()
-                    .map(|delete| Operation::new(CRUD::Delete, delete));
+        if Operation::url_ends_in_variable(path_name) {
+            let maybe_get = methods
+                .get
+                .clone()
+                .map(|get| Operation::new(CRUD::Show, get));
+            let maybe_put = methods
+                .put
+                .clone()
+                .map(|put| Operation::new(CRUD::Update, put));
+            let maybe_patch = methods
+                .patch
+                .clone()
+                .map(|patch| Operation::new(CRUD::Patch, patch));
+            let maybe_delete = methods
+                .delete
+                .clone()
+                .map(|delete| Operation::new(CRUD::Delete, delete));
 
-                maybe_get.or(maybe_put).or(maybe_patch).or(maybe_delete)
-            }
-            false => {
-                let maybe_get = methods
-                    .get
-                    .clone()
-                    .map(|get| Operation::new(CRUD::Index, get));
-                let maybe_post = methods
-                    .put
-                    .clone()
-                    .map(|post| Operation::new(CRUD::Create, post));
-                maybe_get.or(maybe_post)
-            }
+            maybe_get.or(maybe_put).or(maybe_patch).or(maybe_delete)
+        }
+        else {
+            let maybe_get = methods
+                .get
+                .clone()
+                .map(|get| Operation::new(CRUD::Index, get));
+            let maybe_post = methods
+                .put
+                .clone()
+                .map(|post| Operation::new(CRUD::Create, post));
+            maybe_get.or(maybe_post)
         }
     }
 

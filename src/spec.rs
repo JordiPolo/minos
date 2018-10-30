@@ -25,6 +25,7 @@ impl Spec {
             .clone()
     }
 
+    //TODO: this does not need the spec, move somewhere else?
     pub fn json_ref_name(&self, reference: &str) -> String {
         reference.split('/').last().unwrap().to_owned()
     }

@@ -9,7 +9,9 @@ use std::{
 
 use cli_args::*;
 use reqwest::header::CONTENT_TYPE;
+use reqwest::header::ACCEPT;
 use reqwest::Method;
+use reqwest::header::{HeaderMap, HeaderValue};
 
 // TODO: tuple struct?
 // This is the query param as used by the service and in requests to make real calls.
@@ -29,11 +31,11 @@ pub struct ServiceResponse {
 }
 
 pub struct Request<'a> {
-    pub path: &'a str,
-    pub content_type: &'a str,
-    pub method: &'a str,
-    pub query_params: Vec<QueryParam>,
-    pub path_params: Vec<String>,
+    path: &'a str,
+    content_type: &'a str,
+    method: &'a str,
+    query_params: Vec<QueryParam>,
+    path_params: Vec<String>,
 }
 
 impl<'a> Request<'a> {
@@ -76,21 +78,41 @@ impl<'a> Request<'a> {
         Method::from_bytes(self.method.as_bytes()).unwrap()
     }
 
-    pub fn url(&self, base_url: &str, base_path: &str) -> String {
-        let endpoint = self.endpoint(base_url, base_path);
-        let mut param_string = String::new();
-        for query_param in self.query_params.iter() {
-            param_string = format!("{}={}", query_param.0, query_param.1);
+    pub fn headers(&self) -> HeaderMap {
+        let mut request_headers = HeaderMap::new();
+        request_headers.insert("x-mws-authentication", HeaderValue::from_static("MWS 5ff4257e-9c16-11e0-b048-0026bbfffe5e:ThJT3EMI7yjhWQVoTEHYQb15/BIKcgTsCnXlBFKTEnezl9bJQhnNRynE+dskJfiWSanCQOAB9/1e+IHk1U1FjKGPe4y"));
+        if self.method() == Method::PATCH || self.method() == Method::POST || self.method() == Method::PUT {
+           request_headers.insert(CONTENT_TYPE, HeaderValue::from_str(self.content_type).unwrap());
         }
-        format!("{}?{}", endpoint, param_string)
+        request_headers.insert(ACCEPT, HeaderValue::from_str(self.content_type).unwrap());
+        request_headers
     }
 
-    //TODO: Content-type should be a header, not an extension
-    pub fn endpoint(&self, base_url: &str, base_path: &str) -> String {
+    pub fn path_and_query(&self) -> String {
+        let mut param_string = String::new();
+        if !self.query_params.is_empty() {
+            param_string= "?".to_string();
+            for query_param in self.query_params.iter() {
+                param_string.push_str(&format!("{}={}&", query_param.0, query_param.1));
+            }
+            let len = param_string.len();
+            param_string.truncate(len - 1);
+        }
+        format!("{}{}", self.path, param_string)
+    }
+
+    pub fn url(&self, base_url: &str, base_path: &str) -> String {
         format!(
-            "{}{}{}.{}",
-            base_url, base_path, self.path, self.content_type
+            "{}{}{}",
+            base_url, base_path, self.path_and_query()
         )
+    }
+}
+
+use std::fmt;
+impl<'a> fmt::Display for Request<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{} {}", self.method, self.path_and_query())
     }
 }
 
@@ -132,16 +154,21 @@ impl Service {
 
     pub fn send(&self, request: &Request) -> ServiceResponse {
         let endpoint = request.url(&self.base_url, &self.base_path);
+        // TODO: debugging mode
+     //   println!("{:?}", request.headers());
         let mut resp = self
             .client
             .request(request.method(), &endpoint)
-            .header(CONTENT_TYPE, request.content_type)
-            .header("x-mws-authentication", "MWS 5ff4257e-9c16-11e0-b048-0026bbfffe5e:ThJT3EMI7yjhWQVoTEHYQb15/BIKcgTsCnXlBFKTEnezl9bJQhnNRynE+dskJfiWSanCQOAB9/1e+IHk1U1FjKGPe4y")
+            .headers(request.headers())
             .send()
             .expect("The request to the endpoint failed.");
         let body = resp
             .text()
             .expect("It was not possible to read data from body.");
+        // TODO: This should be ok on debug mode.
+        // for header in resp.headers() {
+        //     println!("response header {:?}", header);
+        // }
         ServiceResponse {
             status: resp.status(),
             value: json::parse(&body),

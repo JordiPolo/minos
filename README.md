@@ -21,8 +21,8 @@ minos --run_server
 ```
 
 If the defaults do not work for you or are using some other technology, you can customize minos:
-- -b <base_url>         URL where the server is running [default: http://localhost:3000]
-- -f <filename>         Input OpenAPI file [default: doc/contracts/openapi.yaml]
+- --url <base_url>         URL where the server is running [default: http://localhost:3000]
+- --file <filename>         Input OpenAPI file [default: doc/contracts/openapi.yaml]
 
 In CI, it is often useful for minos to start the application server.
 - -s <server_command>   Command to use to launch server [default: bundle exec rails server]
@@ -52,6 +52,7 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 ## General
 - Unknown Content-Type. Implemented
 - Unknown method. Implemented.
+- Check response content-type. Not Implemented.
 
 ## Index
 - Check response body on all calls. Implemented
