@@ -2,6 +2,17 @@
 name = "minos"
 version = "0.1.0"
 authors = ["Jordi Polo Carres <mumismo@gmail.com>"]
+description = """
+Minos is a command line tool to generate and run scenarios against
+APIs described by OpenAPI files.
+"""
+homepage = "https://github.com/JordiPolo/minos"
+repository = "https://github.com/JordiPolo/minos"
+readme = "README.md"
+keywords = ["openapi", "testing", "cli"]
+categories = ["command-line-utilities", "api"]
+license = "Unlicense OR MIT"
+autotests = false
 
 [dependencies]
 regex = "1.0"
@@ -14,8 +25,12 @@ structopt = "0.2"
 termcolor = "1.0"
 uuid = { version = ">= 0.6", features = ["v4"] }
 rand = "0.5.5"
+chrono = "0.4"
 
 [dependencies.openapi]
-#  path = "../openapi"
   git = "https://github.com/jordipolo/openapi"
-  rev = "7f7a270"
+  rev = "6efec718feb4b53f5372fed0d4704fe62d4e09ce"
+
+[profile.release]
+opt-level = 3
+lto = true

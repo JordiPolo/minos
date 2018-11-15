@@ -35,7 +35,6 @@ pub struct Request<'a> {
     content_type: &'a str,
     method: &'a str,
     query_params: Vec<QueryParam>,
-    path_params: Vec<String>,
 }
 
 impl<'a> Request<'a> {
@@ -45,7 +44,6 @@ impl<'a> Request<'a> {
             content_type: "json",
             method: "get",
             query_params: vec![],
-            path_params: vec![],
         }
     }
 
@@ -66,11 +64,6 @@ impl<'a> Request<'a> {
 
     pub fn set_method(mut self, method: &'a str) -> Self {
         self.method = method;
-        self
-    }
-
-    pub fn path_params(mut self, path_params: Vec<String>) -> Self {
-        self.path_params = path_params;
         self
     }
 

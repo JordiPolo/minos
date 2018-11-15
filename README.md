@@ -30,6 +30,59 @@ In CI, it is often useful for minos to start the application server.
 - -t <server_wait>      Timeout allowed for the service to startup [default: 10]
 
 
+## Conversions file
+Minos still can't discover UUIDs of resources for itself.
+It will call all the `index` routes which do not have required parameters.
+To call other routes which tipically require a parameter in the path, Minos allows you to create a conversions file.
+The file is named `conversions.minos` and lives in the same directory where Minos is executed.
+The format of the file is simply:
+```
+path,<piece to be converted>,<value>
+path,<piece to be converted2>,<value2>
+param,<piece to be converted2>,<value2>
+...
+```
+
+### Example
+Our Openapi spec has the following routes
+```
+/houses/{house_id}:
+  get:
+    params:
+      city_id:
+        required: true
+...
+/houses/{house_id}/renters/{renter_id}:
+...
+```
+
+When we hava a `conversions.minos` file like:
+```
+path,{house_id},55505
+path,{renter_id},60000
+query,city_id,1000
+```
+Minos will test:
+```
+/houses/55505?city_id=1000
+/houses/55505/renters/60000
+```
+
+If we want to use a different house_id for testing renting, with a file like:
+```
+path,{house_id},55505
+path,{house_id}/renters/{renter_id},1111/renters/60000
+query,city_id,1000
+```
+
+Minos will test:
+```
+/houses/55505?city_id=1000
+/houses/1111/renters/60000
+```
+In short, Minos is quite dumb and will just sustitute the strings, no questions asked.
+
+
 # Dredd comparison
 
 |                        | Minos | Dredd  |
@@ -54,7 +107,7 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 - Unknown method. Implemented.
 - Check response content-type. Not Implemented.
 
-## Index
+## Any known operation
 - Check response body on all calls. Implemented
 - No params. Implemented
 - All required params. Not implemented
@@ -64,6 +117,13 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 - All combinations of params. Not implemented
 - Add extra unknown headers. Not implemented
 - Send parameters in their limits and outside their limits. Not implemented
+
+
+## Known operations
+- Index without required parameters
+- Show when conversions.minos contains conversions for the path's variables
+
+
 
 
 # TODO

@@ -20,7 +20,7 @@ impl Operation {
         Operation { crud, method }
     }
 
-    pub fn understand_operation(
+    pub fn create_operation(
         _spec: &Spec,
         path_name: &str,
         methods: &openapi::v2::PathItem,

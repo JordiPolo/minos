@@ -6,6 +6,9 @@ pub struct Location {
 }
 
 impl Location {
+    pub fn empty( ) -> Self {
+        Location::new(vec![])
+    }
     pub fn new(pieces: Vec<&str>) -> Self {
         Location {
             pieces: pieces.clone().into_iter().map(|a| a.to_string()).collect(),
@@ -16,7 +19,10 @@ impl Location {
         let mut new_location = self.clone();
         new_location.pieces.push(piece.to_string());
         new_location
-        //        self.pieces.push(piece.to_string());
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.pieces.is_empty()
     }
 }
 
@@ -26,6 +32,8 @@ impl Display for Location {
         write!(f, "{}", output)
     }
 }
+
+
 
 #[derive(Debug, Clone)]
 pub struct Disparity {
@@ -40,13 +48,24 @@ impl Disparity {
             location,
         }
     }
+    pub fn to_list(self) -> DisparityList {
+        let mut list = DisparityList::new();
+        list.push(self);
+        list
+    }
 }
 
 impl Display for Disparity {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        write!(f, "{} Failed at:\n {}", self.message, self.location)
+        if self.location.is_empty() {
+            writeln!(f, "{}", self.message)
+        } else {
+             write!(f, "{}\n↳ {}", self.location, self.message)
+        }
     }
 }
+
+
 
 #[derive(Debug)]
 pub struct DisparityList {
@@ -63,7 +82,7 @@ impl DisparityList {
     }
 
     pub fn push(&mut self, dis: Disparity) {
-        self.inner.push(dis);
+        self.inner.push(dis)
     }
 
     pub fn option_push(&mut self, dis: Option<Disparity>) -> bool {

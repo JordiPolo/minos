@@ -25,21 +25,62 @@ impl Spec {
             .clone()
     }
 
+    pub fn resolve_parameter_ref(&self,
+        param_or_ref: &openapi::v2::ParameterOrRef,
+    ) -> openapi::v2::Parameter {
+        match param_or_ref.clone() {
+            openapi::v2::ParameterOrRef::Parameter(openapi::v2::Parameter {
+                name,
+                location,
+                required,
+                schema,
+                unique_items,
+                param_type,
+                format,
+                description,
+                minimum,
+                maximum,
+                default,
+                enum_values,
+                exclusive_minimum,
+                exclusive_maximum,
+                max_length,
+                min_length,
+                max_items,
+                min_items,
+                pattern,
+            }) => openapi::v2::Parameter {
+                name,
+                location,
+                required,
+                schema,
+                unique_items,
+                param_type,
+                format,
+                description,
+                minimum,
+                maximum,
+                default,
+                enum_values,
+                exclusive_minimum,
+                exclusive_maximum,
+                max_length,
+                min_length,
+                max_items,
+                min_items,
+                pattern,
+            },
+            openapi::v2::ParameterOrRef::Ref { ref_path } => self.resolve_parameter(&ref_path),
+        }
+    }
+
     //TODO: this does not need the spec, move somewhere else?
     pub fn json_ref_name(&self, reference: &str) -> String {
         reference.split('/').last().unwrap().to_owned()
     }
 
-    pub fn resolve_parameter(&self, parameter_name: &str) -> openapi::v2::Parameter {
+    fn resolve_parameter(&self, parameter_name: &str) -> openapi::v2::Parameter {
         let global_params = self.spec.parameters.clone().unwrap();
         global_params[&self.json_ref_name(&parameter_name)].clone()
     }
 }
-
-// pub fn get_random_undefined_method(methods: &openapi::v2::PathItem) -> String {
-//     if methods.patch.is_none() {
-//         "patch".to_string()
-//     } else {
-//         "put".to_string()
-//     }
-// }

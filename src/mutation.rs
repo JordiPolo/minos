@@ -2,6 +2,7 @@ use operation::CRUD;
 use reqwest::StatusCode;
 use service::QueryParam;
 
+
 pub enum QueryParamMutation {
     Static(QueryParam),
     Proper,
@@ -16,22 +17,6 @@ pub struct Mutation<'a> {
     pub query_params: Option<QueryParamMutation>,
     pub expected: StatusCode,
     pub explanation: &'a str,
-}
-
-impl<'a> Mutation<'a> {
-    pub fn is_application_defined_code(&self) -> bool {
-        let appplication_codes = vec!["200", "400", "403", "404", "409", "422", "423"];
-        appplication_codes
-            .iter()
-            .any(|&code| code == self.defined_code)
-    }
-    // pub fn is_middleware_code(&self) -> bool {
-    //     let appplication_codes = vec!["401", "500"];
-    //     appplication_codes.iter().find(|&&code| code == self.defined_code).is_some()
-    // }
-    // pub fn is_framework_code(&self) -> bool {
-    //     !(self.is_application_defined_code() || self.is_application_defined_code())
-    // }
 }
 
 pub fn mutations_for_crud<'a>(crud: CRUD) -> Vec<Mutation<'a>> {
@@ -84,7 +69,7 @@ pub fn mutations<'a>() -> Vec<Mutation<'a>> {
             method: "GET",
             crud_operation: CRUD::Index,
             query_params: None,
-            expected: StatusCode::NOT_ACCEPTABLE, //TODO: this probably does not make sense, as it will never be defined usually
+            expected: StatusCode::NOT_ACCEPTABLE,
             explanation: "GET with wrong content-type <jason>",
         },
         Mutation {
