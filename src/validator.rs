@@ -47,8 +47,8 @@ fn extract_schema(
                 //             location.clone()))
                 //         )
                 // } else {
-                    Err(None)
-              //  }
+                Err(None)
+                //  }
             }
         },
         None => {
@@ -74,7 +74,6 @@ pub fn check_and_validate(
     real_response: &ServiceResponse,
     expected: StatusCode,
 ) -> DisparityList {
-
     // First check if the returned status code is what we expect, if not we stop here.
     match test_status_code_equality(real_response.status, expected) {
         Some(disparity) => disparity.to_list(),
@@ -82,21 +81,21 @@ pub fn check_and_validate(
             let v2_schema = extract_schema(method, expected);
             // Next check if the body contains JSON, if not, it may be ok if the file is ready for this
             // But it is an error if the file had a schema defining this code and there was no code
-            match real_response.value {
+            match real_response.body {
                 Err(_) => {
                     if v2_schema.is_ok() {
                         json_error().to_list()
                     } else {
                         DisparityList::new()
                     }
-                },
+                }
                 Ok(ref body) => {
                     // There are three outcomes here, the schema, a disparity or neither
                     match v2_schema {
                         Err(maybe_disparity) => match maybe_disparity {
                             None => DisparityList::new(),
                             Some(disparity) => disparity.to_list(),
-                        }
+                        },
                         Ok(s) => {
                             let schema = schema::Schema::new(spec.clone(), s.clone());
                             schema.validate(&body, &Location::empty())

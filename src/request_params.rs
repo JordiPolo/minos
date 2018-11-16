@@ -1,9 +1,8 @@
 use rand::Rng;
 
+use mutation::ParamMutation;
 use openapi;
 use spec::Spec;
-use mutation::QueryParamMutation;
-
 
 //// From here is all about reading known params from files, maybe move somewhere else
 #[derive(Debug)]
@@ -26,18 +25,25 @@ impl KnownParam {
         self.context == "path" && full_path.contains(&self.pattern)
     }
 
-    // fn query_matches(&self, query_param_name: &str) -> bool {
-    //     self.context == "query" && query_param_name == self.pattern
-    // }
+    fn query_matches(&self, query_param_name: &str) -> bool {
+        self.context == "query" && query_param_name == self.pattern
+    }
 }
 
 // TODO: Super inefficiently we are reading the file 1000 times
 fn param_known(name: &str) -> bool {
-    read_known_params().into_iter().any(|param| param.pattern == name)
+    read_known_params()
+        .into_iter()
+        .any(|param| param.query_matches(name))
 }
 
 fn param_value(name: &str) -> String {
-    read_known_params().into_iter().find(|param| param.pattern == name).unwrap().value.to_string()
+    read_known_params()
+        .into_iter()
+        .find(|param| param.query_matches(name))
+        .unwrap()
+        .value
+        .to_string()
 }
 
 fn read_known_params() -> Vec<KnownParam> {
@@ -58,16 +64,15 @@ fn read_known_params() -> Vec<KnownParam> {
 }
 ///// Till here
 
-
- pub fn make_path(path: &str) -> String {
-    match read_known_params().iter().find(|&known_param| known_param.path_matches(path)) {
+pub fn make_path(path: &str) -> String {
+    match read_known_params()
+        .iter()
+        .find(|&known_param| known_param.path_matches(path))
+    {
         None => String::from(path),
-        Some(conversion) => {
-            str::replace(path, &conversion.pattern, &conversion.value)
-        },
+        Some(conversion) => str::replace(path, &conversion.pattern, &conversion.value),
     }
- }
-
+}
 
 // This is the Spec Request param information and helper methods.
 #[derive(Clone)]
@@ -79,37 +84,33 @@ pub struct RequestParam {
 pub fn make_query_params(
     spec: &Spec,
     method: &openapi::v2::Operation,
-    query_params: &Option<QueryParamMutation>,
+    query_params: &ParamMutation,
 ) -> Option<Vec<RequestParam>> {
     match query_params {
-        None => Some(vec![]),
-        Some(param) => match param {
-            QueryParamMutation::Static(the_param) => Some(vec![RequestParam {
-                name: the_param.0.to_string(),
-                value: the_param.1.to_string(),
-            }]),
-            QueryParamMutation::Proper => Some(get_proper_param(&spec, method)),
-            // TODO: properly find wrong parameter here
-            QueryParamMutation::Wrong => {
-                let improper_params = get_improper_param(&spec, method);
-                // If we could not find improper parameters we return None to skip this test
-                // TODO. This is not a very good way of communicating the intent
-                if improper_params.is_empty(){
-                    None
-                }
-                else {
-                    Some(improper_params)
-                }
-            },
-            // QueryParamMutation::Empty => {
-            //     let proper_params = request_params::get_proper_param(&spec, method);
-            //     let result = proper_params.into_iter().map(|mut param| {param.value = "".to_string(); param }).collect();
-            //     Some(result)
-            // }
-        },
+        ParamMutation::None => Some(vec![]),
+        ParamMutation::Static(the_param) => Some(vec![RequestParam {
+            name: the_param.0.to_string(),
+            value: the_param.1.to_string(),
+        }]),
+        ParamMutation::Proper => Some(get_proper_param(&spec, method)),
+        // TODO: properly find wrong parameter here
+        ParamMutation::Wrong => {
+            let improper_params = get_improper_param(&spec, method);
+            // If we could not find improper parameters we return None to skip this test
+            // TODO. This is not a very good way of communicating the intent
+            if improper_params.is_empty() {
+                None
+            } else {
+                Some(improper_params)
+            }
+        }
+        // QueryParamMutation::Empty => {
+        //     let proper_params = request_params::get_proper_param(&spec, method);
+        //     let result = proper_params.into_iter().map(|mut param| {param.value = "".to_string(); param }).collect();
+        //     Some(result)
+        // }
     }
 }
-
 
 fn get_improper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<RequestParam> {
     let params_with_types = get_only_params_with_types(spec, method);
@@ -119,15 +120,14 @@ fn get_improper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<Reque
         .into_iter()
         // We can't make improper of pagination params because they get ignored
         // This is an exception, other known but incorrect parameters would fail
-         .filter(|x| {
+        .filter(|x| {
             let name = x.clone().name;
             name != "page" && name != "per_page" && name != "include_count" &&
             // TODO: Improve on this, create improper and expect 404s
             // TODO: If these uuids or searches are required then we should return empty
             // We can't do improper params of uuids or search as most probably we will just get 404, not 422
             !name.ends_with("_uuid") && !name.starts_with("search")
-        })
-        .map(|param| {
+        }).map(|param| {
             let p_type = param.clone().param_type.unwrap();
             let name = param.clone().name;
             let result;
@@ -162,10 +162,9 @@ fn get_proper_param(spec: &Spec, method: &openapi::v2::Operation) -> Vec<Request
         .filter(|x| {
             let name = x.clone().name;
             let p_type = x.clone().param_type.unwrap();
-            (p_type == "boolean" || p_type == "integer" || p_type == "string") &&
-            ((!name.ends_with("_uuid") && !name.starts_with("search")) ||
-                param_known(&name))
-        //        && (name != "page" && name != "per_page" && name != "include_count")
+            (p_type == "boolean" || p_type == "integer" || p_type == "string")
+                && ((!name.ends_with("_uuid") && !name.starts_with("search")) || param_known(&name))
+            //        && (name != "page" && name != "per_page" && name != "include_count")
         }).map(|param| to_request_param(&param));
 
     request_params.collect()
@@ -217,7 +216,6 @@ fn to_integer_request_param(param: &openapi::v2::Parameter) -> RequestParam {
 
 use chrono::prelude::*;
 
-
 fn to_string_enum_request_param(param: &openapi::v2::Parameter) -> RequestParam {
     let enum_values = param
         .enum_values
@@ -235,24 +233,16 @@ fn to_string_request_param(param: &openapi::v2::Parameter) -> RequestParam {
         // TODO: PRobably we need to do much better than just random UUIDs
         if format == "uuid" {
             let uuid = uuid::Uuid::new_v4();
-            RequestParam::new(
-                &param.name,
-                &format!("{:?}", uuid),
-            )
+            RequestParam::new(&param.name, &format!("{:?}", uuid))
         } else if format == "date-time" {
             let date_time = Utc.ymd(2018, 11, 28).and_hms(12, 0, 9);
-            RequestParam::new(
-                &param.name,
-                &format!("{:?}", date_time),
-            )
-        } else { //if format == "date" {
+            RequestParam::new(&param.name, &format!("{:?}", date_time))
+        } else {
+            //if format == "date" {
             let date = Utc.ymd(2018, 11, 28);
-            RequestParam::new(
-                &param.name,
-                &format!("{:?}", date),
-            )
+            RequestParam::new(&param.name, &format!("{:?}", date))
         }
-        // Need to do uuids but how useful is this without being able to find uuids in the system?
+    // Need to do uuids but how useful is this without being able to find uuids in the system?
     } else {
         to_string_enum_request_param(param)
     }
@@ -263,11 +253,11 @@ fn to_pagination_param(param: &openapi::v2::Parameter) -> RequestParam {
         RequestParam::new(&param.name, "1")
     } else if param.name == "per_page" {
         to_integer_request_param(&param)
-    } else { // include_count
+    } else {
+        // include_count
         RequestParam::new(&param.name, "true")
     }
 }
-
 
 fn to_request_param(param: &openapi::v2::Parameter) -> RequestParam {
     let p = param.clone();

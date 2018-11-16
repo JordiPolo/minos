@@ -6,7 +6,7 @@ pub struct Location {
 }
 
 impl Location {
-    pub fn empty( ) -> Self {
+    pub fn empty() -> Self {
         Location::new(vec![])
     }
     pub fn new(pieces: Vec<&str>) -> Self {
@@ -33,8 +33,6 @@ impl Display for Location {
     }
 }
 
-
-
 #[derive(Debug, Clone)]
 pub struct Disparity {
     message: String,
@@ -60,12 +58,10 @@ impl Display for Disparity {
         if self.location.is_empty() {
             writeln!(f, "{}", self.message)
         } else {
-             write!(f, "{}\n↳ {}", self.location, self.message)
+            write!(f, "{}\n↳ {}", self.location, self.message)
         }
     }
 }
-
-
 
 #[derive(Debug)]
 pub struct DisparityList {

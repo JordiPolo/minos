@@ -18,14 +18,11 @@ impl Spec {
     }
 
     pub fn resolve_definition(&self, definition_name: &str) -> openapi::v2::Schema {
-        self.spec
-            .definitions
-            .clone()
-            .unwrap()[&self.json_ref_name(&definition_name)]
-            .clone()
+        self.spec.definitions.clone().unwrap()[&self.json_ref_name(&definition_name)].clone()
     }
 
-    pub fn resolve_parameter_ref(&self,
+    pub fn resolve_parameter_ref(
+        &self,
         param_or_ref: &openapi::v2::ParameterOrRef,
     ) -> openapi::v2::Parameter {
         match param_or_ref.clone() {

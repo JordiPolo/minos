@@ -79,10 +79,10 @@ impl StringFormat {
             StringFormat::None => self.check_really_unknown_response(value, location),
             StringFormat::Date => {
                 self.check_format_in_response(value, location, DATE_STRING, "date")
-            },
+            }
             StringFormat::DateTime => {
                 self.check_format_in_response(value, location, DATETIME_STRING, "date time")
-            },
+            }
             StringFormat::Unknown => None,
         }
     }

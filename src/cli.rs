@@ -11,7 +11,6 @@ pub fn print_mutation_scenario(path_name: &str, mutation: &mutation::Mutation) {
     print_scenario(format!("  Expects {}", mutation.expected));
 }
 
-
 pub fn print_success(message: impl Display) {
     print_color(message, Color::Green);
 }
@@ -32,4 +31,3 @@ fn print_color(error: impl Display, color: Color) {
     writeln!(output, "{}", error);
     output.reset().unwrap();
 }
-

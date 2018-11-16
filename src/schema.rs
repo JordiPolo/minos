@@ -2,8 +2,8 @@ use disparity::{Disparity, DisparityList, Location};
 use json::JsonValue;
 use openapi;
 
-use spec;
 use checkers::*;
+use spec;
 use string_validator::*;
 
 pub struct Schema {
@@ -104,10 +104,9 @@ impl Schema {
         } else if s_type == "number" || s_type == "integer" {
             //float and double
             disparities.option_push(check_number_format(response, &schema, &location));
-        } else if s_type == "boolean"{
+        } else if s_type == "boolean" {
             () // TODO: What do we need to check here?
-        }
-        else {
+        } else {
             panic!("Unknown type {:?}", s_type);
         }
         //         JsonValue::Boolean(boolean) => {},
