@@ -72,10 +72,11 @@ use crate::spec::Spec;
 
 fn main() {
     let config = cli_args::config();
-    let mut spec = Spec::from_filename(&config.filename);
-    spec.inline_everything();
-    let service = Service::new(&config, &spec.spec.base_path);
+    let spec = Spec::from_filename(&config.filename).inline_everything();
+    let service = Service::new(&config, &spec.base_path);
     let mutator = mutator::Mutator::new();
+
+    //println!("{:?}", spec);
 
     // tests.iter().map(|test| {
     //     let request_path = request_params::make_path(test.path_name);
@@ -106,7 +107,7 @@ fn main() {
     // })
 
     // Create operations from the spec file. Filter out the ones we don't understand
-    let operations = spec.spec.paths.iter().filter_map(|(path_name, methods)| {
+    let operations = spec.paths.iter().filter_map(|(path_name, methods)| {
         operation::Operation::create_supported_operation(path_name, &methods)
     });
 

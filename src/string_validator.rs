@@ -65,7 +65,8 @@ impl StringFormat {
                 } else if string == "date-time" {
                     StringFormat::DateTime
                 } else {
-                    panic!("Unknown string format {}", string)
+                    StringFormat::Unknown
+                    //panic!("Unknown string format {}", string)
                 }
             }
         }

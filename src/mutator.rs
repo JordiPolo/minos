@@ -1,7 +1,6 @@
 use chrono::prelude::*;
 use openapi;
 use rand::Rng;
-use crate::spec;
 
 use crate::known_param::KnownParamCollection;
 use crate::mutation_instructions::ParamMutation;
@@ -222,6 +221,15 @@ impl Mutator {
 
     }
 
+   fn parameter_ref_to_parameter(
+    param_or_ref: &openapi::v2::ParameterOrRef,
+    ) -> openapi::v2::Parameter {
+        match param_or_ref.clone() {
+            openapi::v2::ParameterOrRef::Parameter(parameter) => parameter,
+            openapi::v2::ParameterOrRef::Ref { .. } => unreachable!(),
+        }
+    }
+
     fn get_only_params_with_types(
         &self,
         method: &openapi::v2::Operation,
@@ -230,7 +238,7 @@ impl Mutator {
             Some(param) => Some(
                 param
                     .into_iter()
-                    .map(|p| spec::Spec::resolve_parameter_ref3(&p)),
+                    .map(|p| Mutator::parameter_ref_to_parameter(&p)),
             ),
             None => None,
         };
