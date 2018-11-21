@@ -1,4 +1,4 @@
-use disparity::*;
+use crate::disparity::*;
 use json::JsonValue;
 use openapi;
 use regex::*;

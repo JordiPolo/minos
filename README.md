@@ -31,6 +31,8 @@ In CI, it is often useful for minos to start the application server.
 
 
 ## Conversions file
+This step is optional. If no conversions file is found, Minos will still test all the endpoints without required parameters.
+
 Minos still can't discover UUIDs of resources for itself.
 It will call all the `index` routes which do not have required parameters.
 To call other routes which tipically require a parameter in the path, Minos allows you to create a conversions file.
@@ -56,7 +58,7 @@ Our Openapi spec has the following routes
 ...
 ```
 
-When we hava a `conversions.minos` file like:
+When we have a `conversions.minos` file like:
 ```
 path,{house_id},55505
 path,{renter_id},60000
@@ -125,11 +127,16 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 
 
 
-
 # TODO
 - Configuration file
 - Implement all scenarios
 - Support hooks
+
+
+# Contributing
+PRs very welcome!
+There are no tests for now as things are in flux.
+Code is using the Rust edition 2018. Minimun version of the compiler 1.31
 
 
 

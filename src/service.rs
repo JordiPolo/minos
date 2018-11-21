@@ -8,7 +8,7 @@ use std::{
     time::Duration,
 };
 
-use cli_args::*;
+use crate::cli_args::*;
 use reqwest::header::ACCEPT;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::header::{HeaderMap, HeaderValue};

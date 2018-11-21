@@ -2,9 +2,9 @@ use std::fmt::Display;
 use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-use mutation;
+use crate::mutation_instructions;
 
-pub fn print_mutation_scenario(path_name: &str, mutation: &mutation::Mutation) {
+pub fn print_mutation_scenario(path_name: &str, mutation: &mutation_instructions::MutationInstruction) {
     print_scenario("Scenario:");
     print_scenario(path_name);
     print_scenario(format!("  {}", mutation.explanation));
@@ -28,6 +28,6 @@ fn print_color(error: impl Display, color: Color) {
     output
         .set_color(ColorSpec::new().set_fg(Some(color)).set_bold(true))
         .unwrap();
-    writeln!(output, "{}", error);
+    writeln!(output, "{}", error).unwrap();
     output.reset().unwrap();
 }

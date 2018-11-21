@@ -13,29 +13,23 @@ mod checkers;
 mod cli;
 mod cli_args;
 mod disparity;
-mod mutation;
+mod mutation_instructions;
 mod operation;
-mod request_params;
+mod mutator;
 mod schema;
 mod service;
 mod spec;
 mod string_validator;
 mod validator;
+mod known_param;
 
-use request_params::make_query_params;
-use service::Request;
-use service::Service;
-use spec::Spec;
+use crate::service::Request;
+use crate::service::Service;
+use crate::spec::Spec;
 
-// TODO consolidate known params in request_params
 // TODO: Zipkin
 // TODO: Build test cases
 // TODO: Combination of parameters
-
-// TODO: Remove after 1.31
-// TODO edition 2018
-#[global_allocator]
-static A: std::alloc::System = std::alloc::System;
 
 // struct Scenario<'a> {
 //     request: service::Request<'a>,
@@ -78,8 +72,10 @@ static A: std::alloc::System = std::alloc::System;
 
 fn main() {
     let config = cli_args::config();
-    let spec = Spec::from_filename(&config.filename);
+    let mut spec = Spec::from_filename(&config.filename);
+    spec.inline_everything();
     let service = Service::new(&config, &spec.spec.base_path);
+    let mutator = mutator::Mutator::new();
 
     // tests.iter().map(|test| {
     //     let request_path = request_params::make_path(test.path_name);
@@ -111,17 +107,17 @@ fn main() {
 
     // Create operations from the spec file. Filter out the ones we don't understand
     let operations = spec.spec.paths.iter().filter_map(|(path_name, methods)| {
-        operation::Operation::create_operation(path_name, &methods)
+        operation::Operation::create_supported_operation(path_name, &methods)
     });
 
     for operation in operations {
-        let request_path = request_params::make_path(&operation.path_name);
+        let request_path = mutator.make_path(&operation.path_name);
 
         println!("\n \n **** Testing {} ****", operation.path_name);
 
-        for mutation in mutation::mutations_for_crud(operation.crud).iter() {
+        for mutation_instructions in mutation_instructions::instructions_for_operation(operation.crud).iter() {
             let request_parameters =
-                match make_query_params(&spec, &operation.method, &mutation.query_params) {
+                match mutator.make_query_params(&operation.method, &mutation_instructions.query_params) {
                     // No valid query params could be created to fulfill what this mutation
                     // wants to test so we just skip this one
                     None => continue,
@@ -131,24 +127,22 @@ fn main() {
                         .collect(),
                 };
 
-            cli::print_mutation_scenario(&request_path, mutation);
+            cli::print_mutation_scenario(&request_path, mutation_instructions);
 
             let request = Request::new()
                 .path(&request_path)
                 .query_params(request_parameters)
-                .content_type(mutation.content_type)
-                .set_method(mutation.method);
-            //.path_params(get_path_params(&mutation.crud_operation));
+                .content_type(mutation_instructions.content_type)
+                .set_method(mutation_instructions.method);
 
             println!("Requesting {}", request);
 
             let real_response = service.send(&request);
 
             let disparities = validator::check_and_validate(
-                &spec,
                 &operation.method,
                 &real_response,
-                mutation.expected,
+                mutation_instructions.expected,
             );
             if disparities.is_empty() {
                 cli::print_success("Test passed.")

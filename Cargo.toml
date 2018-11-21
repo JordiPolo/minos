@@ -13,6 +13,7 @@ keywords = ["openapi", "testing", "cli"]
 categories = ["command-line-utilities", "api"]
 license = "Unlicense OR MIT"
 autotests = false
+edition = "2018"
 
 [dependencies]
 regex = "1.0"

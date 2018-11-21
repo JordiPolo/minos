@@ -1,10 +1,9 @@
 use reqwest::StatusCode;
 
-use checkers::test_status_code_equality;
-use disparity::{Disparity, DisparityList, Location};
-use schema;
-use service::ServiceResponse;
-use spec::Spec;
+use crate::checkers::test_status_code_equality;
+use crate::disparity::{Disparity, DisparityList, Location};
+use crate::schema;
+use crate::service::ServiceResponse;
 
 fn json_error() -> Disparity {
     Disparity::new(
@@ -69,7 +68,6 @@ fn extract_schema(
 }
 
 pub fn check_and_validate(
-    spec: &Spec,
     method: &openapi::v2::Operation,
     real_response: &ServiceResponse,
     expected: StatusCode,
@@ -97,7 +95,7 @@ pub fn check_and_validate(
                             Some(disparity) => disparity.to_list(),
                         },
                         Ok(s) => {
-                            let schema = schema::Schema::new(spec.clone(), s.clone());
+                            let schema = schema::Schema::new(s.clone());
                             schema.validate(&body, &Location::empty())
                         }
                     }

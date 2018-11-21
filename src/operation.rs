@@ -23,7 +23,7 @@ impl Operation {
         }
     }
 
-    pub fn create_operation(path_name: &str, methods: &openapi::v2::PathItem) -> Option<Operation> {
+    pub fn create_supported_operation(path_name: &str, methods: &openapi::v2::PathItem) -> Option<Operation> {
         if Operation::url_ends_in_variable(path_name) {
             let maybe_get = methods
                 .get
