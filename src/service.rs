@@ -19,7 +19,7 @@ use reqwest::Method;
 pub type QueryParam = (String, String);
 
 pub struct Request<'a> {
-    path: &'a str,
+    path: String,
     content_type: &'a str,
     method: &'a str,
     query_params: Vec<QueryParam>,
@@ -28,14 +28,14 @@ pub struct Request<'a> {
 impl<'a> Request<'a> {
     pub fn new() -> Request<'a> {
         Request {
-            path: "",
+            path: "".to_string(),
             content_type: "json",
             method: "get",
             query_params: vec![],
         }
     }
 
-    pub fn path(mut self, new_path: &'a str) -> Self {
+    pub fn path(mut self, new_path: String) -> Self {
         self.path = new_path;
         self
     }
@@ -59,12 +59,16 @@ impl<'a> Request<'a> {
         Method::from_bytes(self.method.as_bytes()).unwrap()
     }
 
+    fn is_method_with_data(&self) -> bool {
+        self.method() == Method::PATCH
+        || self.method() == Method::POST
+        || self.method() == Method::PUT
+    }
+
     pub fn headers(&self) -> HeaderMap {
         let mut request_headers = HeaderMap::new();
         request_headers.insert("x-mws-authentication", HeaderValue::from_static("MWS 5ff4257e-9c16-11e0-b048-0026bbfffe5e:ThJT3EMI7yjhWQVoTEHYQb15/BIKcgTsCnXlBFKTEnezl9bJQhnNRynE+dskJfiWSanCQOAB9/1e+IHk1U1FjKGPe4y"));
-        if self.method() == Method::PATCH
-            || self.method() == Method::POST
-            || self.method() == Method::PUT
+        if self.is_method_with_data()
         {
             request_headers.insert(
                 CONTENT_TYPE,
@@ -121,7 +125,7 @@ impl Drop for Service {
 }
 
 impl Service {
-    pub fn new(config: &CLIArgs, base_path_option: &Option<String>) -> Self {
+    pub fn new(config: &CLIArgs, base_path: String) -> Self {
         let server_command: Vec<&str> = config.server_command.split(' ').collect();
         let (command, arguments) = server_command.split_at(1);
 
@@ -137,7 +141,6 @@ impl Service {
             None
         };
 
-        let base_path = base_path_option.clone().unwrap_or("".to_string());
         let client = reqwest::Client::new();
         Service {
             base_url: config.base_url.clone(),
@@ -149,6 +152,7 @@ impl Service {
 
     pub fn send(&self, request: &Request) -> ServiceResponse {
         let endpoint = request.url(&self.base_url, &self.base_path);
+        println!("{:?}", endpoint);
         // TODO: debugging mode
         //   println!("{:?}", request.headers());
         let mut resp = self

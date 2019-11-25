@@ -1,8 +1,4 @@
-//use json;
 use crate::disparity::*;
-use openapi;
-//use regex::*;
-
 use json::JsonValue;
 use reqwest::StatusCode;
 
@@ -57,7 +53,7 @@ pub fn check_response_type(
 
 pub fn check_number_format(
     value: &JsonValue,
-    _schema: &openapi::v2::Schema,
+    _schema: &openapiv3::Schema,
     _location: &Location,
 ) -> Option<Disparity> {
     match *value {

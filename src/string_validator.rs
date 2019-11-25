@@ -1,6 +1,5 @@
 use crate::disparity::*;
 use json::JsonValue;
-use openapi;
 use regex::*;
 
 const UUID_STRING: &str =
@@ -15,7 +14,7 @@ pub struct StringValidator {
 }
 
 impl StringValidator {
-    pub fn new(value: &JsonValue, schema: &openapi::v2::Schema) -> Self {
+    pub fn new(value: &JsonValue, schema: &openapiv3::Schema) -> Self {
         match *value {
             // If we have a match, let's be more specific
             JsonValue::String(ref string) => StringValidator {
@@ -53,7 +52,7 @@ enum StringFormat {
 }
 
 impl StringFormat {
-    pub fn new(schema: &openapi::v2::Schema) -> Self {
+    pub fn new(schema: &openapiv3::Schema) -> Self {
         let format = schema.format.clone();
         match format {
             None => StringFormat::None,

@@ -13,6 +13,7 @@ keywords = ["openapi", "testing", "cli"]
 categories = ["command-line-utilities", "api"]
 license = "Unlicense OR MIT"
 autotests = false
+
 edition = "2018"
 
 [dependencies]
@@ -20,17 +21,19 @@ regex = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
+serde_yaml = "*"
 reqwest = "0.9"
 json = "*"
-structopt = "0.2"
+structopt = "0.3"
 termcolor = "1.0"
 uuid = { version = ">= 0.6", features = ["v4"] }
-rand = "0.5.5"
+rand = "0.7.0"
 chrono = "0.4"
+openapiv3 = "0.3.0"
+openapi_utils = { path = "../../oasproxy/openapi_utils" }
 
-[dependencies.openapi]
-  git = "https://github.com/jordipolo/openapi"
-  rev = "6efec718feb4b53f5372fed0d4704fe62d4e09ce"
+[profile.dev]
+debug=0
 
 [profile.release]
 opt-level = 3
