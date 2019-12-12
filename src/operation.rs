@@ -1,4 +1,4 @@
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum CRUD {
     Index,
     Create,
@@ -24,7 +24,9 @@ impl Endpoint {
         }
     }
 
-    pub fn create_supported_endpoint(path_name: &str, methods: &openapiv3::PathItem) -> Option<Self> {
+    // TODO Return Vec which may be empty instead
+    pub fn create_supported_endpoint(path_name: &str, methods: &openapiv3::PathItem) -> Vec<Option<Self>> {
+        let mut vec = Vec::new();
         if Endpoint::url_ends_in_variable(path_name) {
             let maybe_get = methods
                 .get
@@ -43,7 +45,12 @@ impl Endpoint {
                 .clone()
                 .map(|delete| Endpoint::new(CRUD::Delete, path_name, delete));
 
-            maybe_get.or(maybe_put).or(maybe_patch).or(maybe_delete)
+            vec.push(maybe_get);
+            vec.push(maybe_put);
+            vec.push(maybe_patch);
+            vec.push(maybe_delete);
+            vec.retain(|c| c.is_some());
+            vec
         } else {
             let maybe_get = methods
                 .get
@@ -53,7 +60,10 @@ impl Endpoint {
                 .put
                 .clone()
                 .map(|post| Endpoint::new(CRUD::Create, path_name, post));
-            maybe_get.or(maybe_post)
+            vec.push(maybe_get);
+            vec.push(maybe_post);
+            vec.retain(|c| c.is_some());
+            vec
         }
     }
 

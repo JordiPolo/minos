@@ -46,7 +46,6 @@ impl<'a> MutationInstruction<'a> {
             explanation,
         }
     }
-
     fn content_type(mut self, content_type: &'a str) -> Self {
         self.content_type = content_type;
         self
@@ -66,10 +65,21 @@ impl<'a> MutationInstruction<'a> {
         self.method = method;
         self
     }
+
+    fn crud_operation(mut self, crud_operation: CRUD) -> Self {
+        self.crud_operation = crud_operation;
+        self
+    }
 }
 
 fn mutations<'a>() -> Vec<MutationInstruction<'a>> {
     vec![
+        // Think how to do this better
+        // MutationInstruction::new("GET resource with no optional parameters")
+        // .query_params(ParamMutation::None)
+        // .expected(StatusCode::OK)
+        // .crud_operation(CRUD::Show),
+
         MutationInstruction::new("GET with no optional parameters")
             .query_params(ParamMutation::None)
             .expected(StatusCode::OK),

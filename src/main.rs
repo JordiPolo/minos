@@ -1,7 +1,7 @@
 mod checkers;
 mod cli;
 mod cli_args;
-mod disparity;
+//mod disparity;
 mod mutation_instructions;
 mod operation;
 mod mutator;
@@ -18,6 +18,11 @@ use openapi_utils::ReferenceOrExt;
 use openapi_utils::ServerExt;
 use openapi_utils::SpecExt;
 
+
+struct ScenarioExecution<'a> {
+    scenario: Scenario<'a>,
+    request: Request<'a>,
+}
 
 struct Scenario<'a> {
     endpoint: operation::Endpoint,
@@ -41,12 +46,17 @@ fn main() {
 
     let mutator = mutator::Mutator::new(&spec);
 
+    let o_endpoints: Vec<Option<operation::Endpoint>>;
 
     // Create endpoints from the spec file. Filter out the ones we don't understand
     // Eventually this will be all the stuff in the file.
-    let endpoints = spec.paths.iter().filter_map(|(path_name, methods)| {
+    o_endpoints = spec.paths.iter().flat_map(|(path_name, methods)| {
         operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
-    });
+    }).collect();
+
+    // TODO This is only done to rilter out None , there needs to be a better way
+    let endpoints = o_endpoints.into_iter().filter_map(|e| e);
+
 
     let scenarios = endpoints.fold(Vec::new(), |mut acc, endpoint| {
         let instructions = mutation_instructions::instructions_for_operation(endpoint.crud.clone());
@@ -57,7 +67,7 @@ fn main() {
     });
 
 
-    let requests = scenarios.into_iter().map(|scenario| {
+    let scenario_executions = scenarios.into_iter().map(|scenario| {
         let request_path = mutator.make_path(&scenario.endpoint.path_name);
         let request_parameters =
         match mutator.make_query_params(&scenario.endpoint.method, &scenario.instructions.query_params) {
@@ -72,30 +82,38 @@ fn main() {
 
         cli::print_mutation_scenario(&request_path, &scenario.instructions);
 
-        Request::new()
+        let request = Request::new()
             .path(request_path)
             .query_params(request_parameters)
             .content_type(scenario.instructions.content_type)
-            .set_method(scenario.instructions.method)
+            .set_method(scenario.instructions.method);
+        ScenarioExecution { scenario, request }
     });
 
-    // Run each scenario, get the response and valiate it with what we expect
-    for request in requests {
-        println!("Requesting {}", request);
+    // Run each scenario execution, get the response and validate it with what we expect
+    for execution in scenario_executions {
+        //println!("Requesting {:?}", request);
 
-        let real_response = service.send(&request);
+        let real_response = service.send(&execution.request);
+
+        if real_response.status != execution.scenario.instructions.expected {
+            println!("Got {}", real_response.status);
+            cli::print_error("Test failed.")
+        } else {
+            cli::print_success("Test passed.")
+        }
 
         // let disparities = validator::check_and_validate(
         //     &operation.method,
         //     &real_response,
         //     mutation_instructions.expected,
         // );
-        let disparities = disparity::DisparityList::new();
-        if disparities.is_empty() {
-            cli::print_success("Test passed.")
-        } else {
-            cli::print_error(disparities);
-        }
+        // let disparities = disparity::DisparityList::new();
+        // if disparities.is_empty() {
+        //     cli::print_success("Test passed.")
+        // } else {
+        //     cli::print_error(disparities);
+        // }
         println!();
     }
 

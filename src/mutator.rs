@@ -42,7 +42,7 @@ impl ProperParamsBuilder {
         param: &openapiv3::Parameter,
         known_params: &KnownParamCollection,
     ) -> RequestParam {
-        println!("{:?}", param);
+    //    println!("{:?}", param);
         let name = param.name();
         if known_params.param_known(&name) {
             return RequestParam::new(&name, &known_params.param_value(&name));
@@ -102,18 +102,23 @@ impl ProperParamsBuilder {
                     let date_time = Utc.ymd(2018, 11, 28).and_hms(12, 0, 9);
                     RequestParam::new(&name, &format!("{:?}", date_time))
                 },
-                _ => unimplemented!("String formoat not supported")
+                _ => unimplemented!("String format not supported")
             },
             openapiv3::VariantOrUnknownOrEmpty::Unknown(string) => {
                 if string == "uuid" {
                     let uuid = uuid::Uuid::new_v4();
                     RequestParam::new(&name, &format!("{:?}", uuid))
                 } else {
+                    RequestParam::new(&name, "PLAIN_STRING")
                    // TODO plain string
-                   unimplemented!("No plain string support")
+                  // unimplemented!("No plain string support")
                 }
             }
-            openapiv3::VariantOrUnknownOrEmpty::Empty => {unimplemented!("No plain string support")},
+            openapiv3::VariantOrUnknownOrEmpty::Empty => {
+                // TODO Better idea here
+                RequestParam::new(&name, "PLAIN_STRING")
+                //unimplemented!("No plain string support")
+            },
         }
         // TODO: This where?
         // ProperParamsBuilder::to_string_enum_request_param(param)
