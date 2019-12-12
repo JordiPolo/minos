@@ -74,11 +74,11 @@ impl<'a> MutationInstruction<'a> {
 
 fn mutations<'a>() -> Vec<MutationInstruction<'a>> {
     vec![
-        // Think how to do this better
+        //Think how to do this better
         // MutationInstruction::new("GET resource with no optional parameters")
         // .query_params(ParamMutation::None)
         // .expected(StatusCode::OK)
-        // .crud_operation(CRUD::Show),
+        // .crud_operations(CRUD::Show， CRUD::Index),
 
         MutationInstruction::new("GET with no optional parameters")
             .query_params(ParamMutation::None)

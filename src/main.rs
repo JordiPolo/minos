@@ -1,4 +1,4 @@
-mod checkers;
+//mod checkers;
 mod cli;
 mod cli_args;
 //mod disparity;

@@ -30,7 +30,7 @@ uuid = { version = ">= 0.6", features = ["v4"] }
 rand = "0.7.0"
 chrono = "0.4"
 openapiv3 = "0.3.0"
-openapi_utils = { path = "../../oasproxy/openapi_utils" }
+openapi_utils = "0.1.1"
 
 [profile.dev]
 debug=0
