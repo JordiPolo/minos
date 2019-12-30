@@ -106,7 +106,7 @@ pub struct Service {
     base_url: String,
     base_path: String,
     server: Option<Child>,
-    client: reqwest::Client,
+    client: reqwest::blocking::Client,
 }
 
 pub struct ServiceResponse {
@@ -114,34 +114,34 @@ pub struct ServiceResponse {
     pub body: Result<json::JsonValue, json::Error>,
 }
 
-// impl Drop for Service {
-//     fn drop(&mut self) {
-//         self.server.as_mut().map(|s| {
-//             s.kill()
-//                 .expect("Service could not be killed, maybe it was not running (crashed?)")
-//         });
-//     }
-// }
+impl Drop for Service {
+    fn drop(&mut self) {
+        self.server.as_mut().map(|s| {
+            s.kill()
+                .expect("Service could not be killed, maybe it was not running (crashed?)")
+        });
+    }
+}
 
 impl Service {
     pub fn new(config: &CLIArgs, base_path: String) -> Self {
-        // let server_command: Vec<&str> = config.server_command.split(' ').collect();
-        // let (command, arguments) = server_command.split_at(1);
+        let server_command: Vec<&str> = config.server_command.split(' ').collect();
+        let (command, arguments) = server_command.split_at(1);
 
-        // let server = if config.server_run {
-        //     let server = Command::new(command[0])
-        //         .args(arguments)
-        //         .spawn()
-        //         .expect("failed to execute the server.");
-        //     println!("Starting server. Waiting {:?} seconds", &config.server_wait);
-        //     sleep(Duration::from_millis(config.server_wait * 1000));
-        //     Some(server)
-        // } else {
-        //     None
-        // };
-        let server = None;
+        let server = if config.server_run {
+            let server = Command::new(command[0])
+                .args(arguments)
+                .spawn()
+                .expect("failed to execute the server.");
+            println!("Starting server. Waiting {:?} seconds", &config.server_wait);
+            sleep(Duration::from_millis(config.server_wait * 1000));
+            Some(server)
+        } else {
+            None
+        };
+    //    let server = None;
 
-        let client = reqwest::Client::new();
+        let client = reqwest::blocking::Client::new();
         Service {
             base_url: config.base_url.clone(),
             base_path,
@@ -155,12 +155,15 @@ impl Service {
         println!("{:?}", endpoint);
         // TODO: debugging mode
         //   println!("{:?}", request.headers());
-        let mut resp = self
+        let resp = self
             .client
             .request(request.method(), &endpoint)
             .headers(request.headers())
             .send()
             .expect("The request to the endpoint failed.");
+
+        let status = resp.status();
+
         let body = resp
             .text()
             .expect("It was not possible to read data from body.");
@@ -169,7 +172,7 @@ impl Service {
         //     println!("response header {:?}", header);
         // }
         ServiceResponse {
-            status: resp.status(),
+            status,
             body: json::parse(&body),
         }
     }

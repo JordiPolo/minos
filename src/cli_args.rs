@@ -10,7 +10,6 @@ pub fn config() -> CLIArgs {
     about = "Minos tests that your OpenAPI file matches your live API."
 )]
 pub struct CLIArgs {
-    /// Needed parameter, the first on the command line.
     #[structopt(
         short = "f",
         long = "file",
@@ -19,7 +18,6 @@ pub struct CLIArgs {
     )]
     pub filename: String,
 
-    /// Needed parameter, the first on the command line.
     #[structopt(
         short = "url",
         long = "url",
