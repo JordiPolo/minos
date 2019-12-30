@@ -1,27 +1,40 @@
 //mod checkers;
 mod cli;
 mod cli_args;
-//mod disparity;
+mod error;
 mod mutation_instructions;
-mod operation;
 mod mutator;
+mod operation;
 //mod schema;
 mod service;
 mod spec;
 //mod string_validator;
-//mod validator;
+mod validator;
 mod known_param;
 
-use crate::service::Request;
-use crate::service::Service;
-use openapi_utils::ReferenceOrExt;
-use openapi_utils::ServerExt;
-use openapi_utils::SpecExt;
-
+use crate::service::{Request, Service};
+use openapi_utils::{OperationExt, ReferenceOrExt, ServerExt, SpecExt};
+use reqwest::StatusCode;
 
 struct ScenarioExecution<'a> {
     scenario: Scenario<'a>,
     request: Request<'a>,
+}
+
+impl<'a> ScenarioExecution<'a> {
+    // pub fn method(&self) -> openapiv3::Operation {
+    //     self.scenario.endpoint.method.clone()
+    // }
+
+    pub fn expected_status_code(&self) -> StatusCode {
+        self.scenario.instructions.expected
+    }
+    pub fn expected_body(&self) -> Option<&openapiv3::Response> {
+        self.scenario
+            .endpoint
+            .method
+            .response(self.scenario.instructions.expected.as_u16())
+    }
 }
 
 struct Scenario<'a> {
@@ -30,7 +43,10 @@ struct Scenario<'a> {
 }
 
 impl<'a> Scenario<'a> {
-    fn new(endpoint: operation::Endpoint, instructions: mutation_instructions::MutationInstruction<'a>) -> Self {
+    fn new(
+        endpoint: operation::Endpoint,
+        instructions: mutation_instructions::MutationInstruction<'a>,
+    ) -> Self {
         Scenario {
             endpoint,
             instructions,
@@ -46,17 +62,10 @@ fn main() {
 
     let mutator = mutator::Mutator::new(&spec);
 
-    let o_endpoints: Vec<Option<operation::Endpoint>>;
-
-    // Create endpoints from the spec file. Filter out the ones we don't understand
-    // Eventually this will be all the stuff in the file.
-    o_endpoints = spec.paths.iter().flat_map(|(path_name, methods)| {
+    // Create endpoints from the spec file.
+    let endpoints = spec.paths.iter().flat_map(|(path_name, methods)| {
         operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
-    }).collect();
-
-    // TODO This is only done to rilter out None , there needs to be a better way
-    let endpoints = o_endpoints.into_iter().filter_map(|e| e);
-
+    });
 
     let scenarios = endpoints.fold(Vec::new(), |mut acc, endpoint| {
         let instructions = mutation_instructions::instructions_for_operation(endpoint.crud.clone());
@@ -66,13 +75,14 @@ fn main() {
         acc
     });
 
-
     let scenario_executions = scenarios.into_iter().map(|scenario| {
         let request_path = mutator.make_path(&scenario.endpoint.path_name);
-        let request_parameters =
-        match mutator.make_query_params(&scenario.endpoint.method, &scenario.instructions.query_params) {
-            // No valid query params could be created to fulfill what this mutation
-            // wants to test so we just skip this one
+        let request_parameters = match mutator.make_query_params(
+            &scenario.endpoint.method,
+            &scenario.instructions.query_params,
+        ) {
+            // No valid query params could be created to fulfill this mutation. This is a bug.
+            // TODO: Conversion of two ways of doing request params
             None => panic!(),
             Some(query_params) => query_params
                 .into_iter()
@@ -96,25 +106,15 @@ fn main() {
 
         let real_response = service.send(&execution.request);
 
-        if real_response.status != execution.scenario.instructions.expected {
-            println!("Got {}", real_response.status);
-            cli::print_error("Test failed.")
-        } else {
-            cli::print_success("Test passed.")
+        match validator::validate(&real_response, execution.expected_status_code(), execution.expected_body()) {
+            Err(error) => {
+                println!("{:?}", execution.scenario.endpoint);
+                println!("{}", error.to_string());
+                cli::print_error("Test failed.");
+            }
+            Ok(_) => cli::print_success("Test passed."),
         }
 
-        // let disparities = validator::check_and_validate(
-        //     &operation.method,
-        //     &real_response,
-        //     mutation_instructions.expected,
-        // );
-        // let disparities = disparity::DisparityList::new();
-        // if disparities.is_empty() {
-        //     cli::print_success("Test passed.")
-        // } else {
-        //     cli::print_error(disparities);
-        // }
         println!();
     }
-
 }

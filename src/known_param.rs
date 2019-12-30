@@ -35,15 +35,14 @@ impl KnownParamCollection {
     }
 
     pub fn find_by_path(&self, path: &str) -> Option<KnownParam> {
-        self.params.clone()
+        self.params
+            .clone()
             .into_iter()
             .find(|param| param.path_matches(path))
     }
 
     pub fn param_known(&self, name: &str) -> bool {
-        self.params
-            .iter()
-            .any(|param| param.query_matches(name))
+        self.params.iter().any(|param| param.query_matches(name))
     }
 
     pub fn param_value(&self, name: &str) -> String {

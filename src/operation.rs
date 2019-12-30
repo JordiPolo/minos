@@ -8,7 +8,7 @@ pub enum CRUD {
     Patch,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Endpoint {
     pub crud: CRUD,
     pub path_name: String,
@@ -25,7 +25,7 @@ impl Endpoint {
     }
 
     // TODO Return Vec which may be empty instead
-    pub fn create_supported_endpoint(path_name: &str, methods: &openapiv3::PathItem) -> Vec<Option<Self>> {
+    pub fn create_supported_endpoint(path_name: &str, methods: &openapiv3::PathItem) -> Vec<Self> {
         let mut vec = Vec::new();
         if Endpoint::url_ends_in_variable(path_name) {
             let maybe_get = methods
@@ -50,7 +50,7 @@ impl Endpoint {
             vec.push(maybe_patch);
             vec.push(maybe_delete);
             vec.retain(|c| c.is_some());
-            vec
+            vec.into_iter().map(|o| o.unwrap()).collect()
         } else {
             let maybe_get = methods
                 .get
@@ -63,7 +63,7 @@ impl Endpoint {
             vec.push(maybe_get);
             vec.push(maybe_post);
             vec.retain(|c| c.is_some());
-            vec
+            vec.into_iter().map(|o| o.unwrap()).collect()
         }
     }
 

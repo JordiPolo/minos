@@ -4,7 +4,10 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::mutation_instructions;
 
-pub fn print_mutation_scenario(path_name: &str, mutation: &mutation_instructions::MutationInstruction) {
+pub fn print_mutation_scenario(
+    path_name: &str,
+    mutation: &mutation_instructions::MutationInstruction,
+) {
     print_scenario("Scenario:");
     print_scenario(path_name);
     print_scenario(format!("  {}", mutation.explanation));

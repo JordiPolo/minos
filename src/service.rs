@@ -61,15 +61,14 @@ impl<'a> Request<'a> {
 
     fn is_method_with_data(&self) -> bool {
         self.method() == Method::PATCH
-        || self.method() == Method::POST
-        || self.method() == Method::PUT
+            || self.method() == Method::POST
+            || self.method() == Method::PUT
     }
 
     pub fn headers(&self) -> HeaderMap {
         let mut request_headers = HeaderMap::new();
         request_headers.insert("x-mws-authentication", HeaderValue::from_static("MWS 5ff4257e-9c16-11e0-b048-0026bbfffe5e:ThJT3EMI7yjhWQVoTEHYQb15/BIKcgTsCnXlBFKTEnezl9bJQhnNRynE+dskJfiWSanCQOAB9/1e+IHk1U1FjKGPe4y"));
-        if self.is_method_with_data()
-        {
+        if self.is_method_with_data() {
             request_headers.insert(
                 CONTENT_TYPE,
                 HeaderValue::from_str(self.content_type).unwrap(),
@@ -115,31 +114,32 @@ pub struct ServiceResponse {
     pub body: Result<json::JsonValue, json::Error>,
 }
 
-impl Drop for Service {
-    fn drop(&mut self) {
-        self.server.as_mut().map(|s| {
-            s.kill()
-                .expect("Service could not be killed, maybe it was not running (crashed?)")
-        });
-    }
-}
+// impl Drop for Service {
+//     fn drop(&mut self) {
+//         self.server.as_mut().map(|s| {
+//             s.kill()
+//                 .expect("Service could not be killed, maybe it was not running (crashed?)")
+//         });
+//     }
+// }
 
 impl Service {
     pub fn new(config: &CLIArgs, base_path: String) -> Self {
-        let server_command: Vec<&str> = config.server_command.split(' ').collect();
-        let (command, arguments) = server_command.split_at(1);
+        // let server_command: Vec<&str> = config.server_command.split(' ').collect();
+        // let (command, arguments) = server_command.split_at(1);
 
-        let server = if config.server_run {
-            let server = Command::new(command[0])
-                .args(arguments)
-                .spawn()
-                .expect("failed to execute the server.");
-            println!("Starting server. Waiting {:?} seconds", &config.server_wait);
-            sleep(Duration::from_millis(config.server_wait * 1000));
-            Some(server)
-        } else {
-            None
-        };
+        // let server = if config.server_run {
+        //     let server = Command::new(command[0])
+        //         .args(arguments)
+        //         .spawn()
+        //         .expect("failed to execute the server.");
+        //     println!("Starting server. Waiting {:?} seconds", &config.server_wait);
+        //     sleep(Duration::from_millis(config.server_wait * 1000));
+        //     Some(server)
+        // } else {
+        //     None
+        // };
+        let server = None;
 
         let client = reqwest::Client::new();
         Service {

@@ -1,6 +1,6 @@
 use crate::operation::CRUD;
-use reqwest::StatusCode;
 use crate::service::QueryParam;
+use reqwest::StatusCode;
 
 pub struct MutationInstruction<'a> {
     pub content_type: &'a str,
@@ -26,7 +26,6 @@ pub fn instructions_for_operation<'a>(crud: CRUD) -> Vec<MutationInstruction<'a>
         .filter(|mutation| mutation.crud_operation == crud)
         .collect()
 }
-
 
 impl ParamMutation {
     fn static_values(name: &str, value: &str) -> Self {
@@ -79,7 +78,6 @@ fn mutations<'a>() -> Vec<MutationInstruction<'a>> {
         // .query_params(ParamMutation::None)
         // .expected(StatusCode::OK)
         // .crud_operations(CRUD::Show， CRUD::Index),
-
         MutationInstruction::new("GET with no optional parameters")
             .query_params(ParamMutation::None)
             .expected(StatusCode::OK),

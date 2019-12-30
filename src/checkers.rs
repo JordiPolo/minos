@@ -2,23 +2,24 @@ use crate::disparity::*;
 use json::JsonValue;
 use reqwest::StatusCode;
 
-pub fn test_status_code_equality(
-    response_status: StatusCode,
-    desired_status: StatusCode,
-) -> Option<Disparity> {
-    if response_status == desired_status {
-        None
-    } else {
-        let error = Disparity::new(
-            &format!(
-                "Inconsistency: Expected: {}, got {}. ",
-                desired_status, response_status
-            ),
-            Location::new(vec!["Status code"]),
-        );
-        Some(error)
-    }
-}
+// Unneeded
+// pub fn test_status_code_equality(
+//     response_status: StatusCode,
+//     desired_status: StatusCode,
+// ) -> Option<Disparity> {
+//     if response_status == desired_status {
+//         None
+//     } else {
+//         let error = Disparity::new(
+//             &format!(
+//                 "Inconsistency: Expected: {}, got {}. ",
+//                 desired_status, response_status
+//             ),
+//             Location::new(vec!["Status code"]),
+//         );
+//         Some(error)
+//     }
+// }
 
 // Checks that the response has values of the same type as specified in the schema
 pub fn check_response_type(
