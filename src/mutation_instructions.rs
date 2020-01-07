@@ -2,6 +2,7 @@ use crate::operation::CRUD;
 use crate::service::QueryParam;
 use reqwest::StatusCode;
 
+#[derive(Debug)]
 pub struct MutationInstruction<'a> {
     pub content_type: &'a str,
     pub method: &'a str,
@@ -12,6 +13,7 @@ pub struct MutationInstruction<'a> {
     pub explanation: &'a str,
 }
 
+#[derive(Debug)]
 pub enum ParamMutation {
     Static(QueryParam),
     Proper,
@@ -71,6 +73,10 @@ impl<'a> MutationInstruction<'a> {
     }
 }
 
+// Flow rate
+// queue health
+
+
 fn mutations<'a>() -> Vec<MutationInstruction<'a>> {
     vec![
         //Think how to do this better
@@ -90,6 +96,7 @@ fn mutations<'a>() -> Vec<MutationInstruction<'a>> {
         MutationInstruction::new("GET with extra known optional but with improper parameters")
             .query_params(ParamMutation::Wrong)
             .expected(StatusCode::UNPROCESSABLE_ENTITY),
+// Applicable to all endpoints
         MutationInstruction::new("GET with wrong content-type <jason>")
             .content_type("minosTest/jason")
             .expected(StatusCode::NOT_ACCEPTABLE),

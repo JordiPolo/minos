@@ -2,6 +2,8 @@ use crate::disparity::*;
 use json::JsonValue;
 use reqwest::StatusCode;
 
+// This file is not needed now as we are using Valico
+
 // Unneeded
 // pub fn test_status_code_equality(
 //     response_status: StatusCode,

@@ -5,6 +5,9 @@ use crate::checkers::*;
 use crate::string_validator::*;
 use crate::disparity::{Disparity, DisparityList, Location};
 
+
+// This file is not needed anymore
+
 pub struct Schema {
     pub schema: openapi::v2::Schema,
 }

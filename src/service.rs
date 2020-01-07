@@ -1,4 +1,3 @@
-use json;
 use reqwest;
 
 use std::{
@@ -18,6 +17,7 @@ use reqwest::Method;
 // This is the query param as used by the service and in requests to make real calls.
 pub type QueryParam = (String, String);
 
+#[derive(Debug)]
 pub struct Request<'a> {
     path: String,
     content_type: &'a str,
@@ -111,7 +111,7 @@ pub struct Service {
 
 pub struct ServiceResponse {
     pub status: reqwest::StatusCode,
-    pub body: Result<json::JsonValue, json::Error>,
+    pub body: serde_json::Result<serde_json::Value>,
 }
 
 impl Drop for Service {
@@ -173,7 +173,7 @@ impl Service {
         // }
         ServiceResponse {
             status,
-            body: json::parse(&body),
+            body: serde_json::from_str(&body),
         }
     }
 }

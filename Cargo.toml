@@ -23,7 +23,6 @@ serde_derive = "1.0"
 serde_json = "1.0"
 serde_yaml = "*"
 reqwest = { version = "0.10", features = ["blocking"] }
-json = "*"
 structopt = "0.3"
 termcolor = "1.0"
 uuid = { version = ">= 0.6", features = ["v4"] }
@@ -33,6 +32,7 @@ openapiv3 = "0.3.0"
 openapi_utils = { path = "../../oasproxy/openapi_utils" }
 #openapi_utils = "0.1.1"
 thiserror = "1.0"
+valico = "3"
 
 [profile.dev]
 debug=0

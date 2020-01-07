@@ -16,6 +16,7 @@ use crate::service::{Request, Service};
 use openapi_utils::{OperationExt, ReferenceOrExt, ServerExt, SpecExt};
 use reqwest::StatusCode;
 
+#[derive(Debug)]
 struct ScenarioExecution<'a> {
     scenario: Scenario<'a>,
     request: Request<'a>,
@@ -37,6 +38,7 @@ impl<'a> ScenarioExecution<'a> {
     }
 }
 
+#[derive(Debug)]
 struct Scenario<'a> {
     endpoint: operation::Endpoint,
     instructions: mutation_instructions::MutationInstruction<'a>,
@@ -81,9 +83,12 @@ fn main() {
             &scenario.endpoint.method,
             &scenario.instructions.query_params,
         ) {
-            // No valid query params could be created to fulfill this mutation. This is a bug.
+            // No valid query params could be created to fulfill this mutation.
+            // This happens for instance if we want to create improper parameters
+            // But the endpoint does not have any parameters!
+            // This is a bug, really we should not be running this scenario
             // TODO: Conversion of two ways of doing request params
-            None => panic!(),
+            None => vec![("".to_string(), "".to_string())],//panic!(),
             Some(query_params) => query_params
                 .into_iter()
                 .map(|param| (param.name, param.value))
@@ -100,15 +105,15 @@ fn main() {
         ScenarioExecution { scenario, request }
     });
 
+    println!("{:?}", scenario_executions);
+
     // Run each scenario execution, get the response and validate it with what we expect
     for execution in scenario_executions {
-        //println!("Requesting {:?}", request);
-
         let real_response = service.send(&execution.request);
 
         match validator::validate(&real_response, execution.expected_status_code(), execution.expected_body()) {
             Err(error) => {
-                println!("{:?}", execution.scenario.endpoint);
+                //println!("{:?}", execution.scenario.endpoint);
                 println!("{}", error.to_string());
                 cli::print_error("Test failed.");
             }
