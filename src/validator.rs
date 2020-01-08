@@ -94,13 +94,13 @@ fn validate_schema(
     let valico = scope
         .compile_and_return(json_v4_schema, false)
         .expect("Improper creation of schema");
-    let state = valico.validate(&body);
+    let mut state = valico.validate(&body);
 
     if state.is_valid() {
         Ok(())
     } else {
-        println!("Response body:\n {}", body);
-        return Err(error::body_schema_incorrect(state.errors));
+       // println!("Response body:\n {}", body);
+        return Err(error::body_schema_incorrect(&mut state.errors));
     }
 }
 

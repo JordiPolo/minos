@@ -1,5 +1,5 @@
 // This is the Spec Request param information and helper methods.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct RequestParam {
     pub name: String,
     pub value: String,

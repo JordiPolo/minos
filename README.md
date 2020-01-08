@@ -98,7 +98,7 @@ In short, Minos is quite dumb and will just sustitute the strings, no questions 
 | Hooks                  | No    | Yes  |
 | Big community          | No    | Yes  |
 | Good documentation     | None  | Yes  |
-| Routes                 | Index | All  |
+| Routes                 | GET   | All  |
 
 
 Hopefully in the future Minos will be equal and superior to Dredd, ideally it will support the same hooks.

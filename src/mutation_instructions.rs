@@ -14,7 +14,7 @@ pub struct MutationInstruction {
     pub explanation: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ParamMutation {
     Static(RequestParam),
     Proper,
@@ -30,13 +30,12 @@ pub fn mutations() -> Vec<MutationInstruction> {
             "Request with proper required parameters and no optional parameters",
         )
         .expected(StatusCode::OK),
-        // TODO
-        // MutationInstruction::new("Request without the required parameters")
-        //     .required_params(ParamMutation::None)
-        //     .expected(StatusCode::UNPROCESSABLE_ENTITY),
-        // MutationInstruction::new("Request with incorrect required parameters")
-        //     .required_params(ParamMutation::Wrong)
-        //     .expected(StatusCode::UNPROCESSABLE_ENTITY),
+        MutationInstruction::new("Request without the needed required parameters")
+            .required_params(ParamMutation::None)
+            .expected(StatusCode::UNPROCESSABLE_ENTITY),
+        MutationInstruction::new("Request with incorrect required parameters")
+            .required_params(ParamMutation::Wrong)
+            .expected(StatusCode::UNPROCESSABLE_ENTITY),
 
         // MutationInstruction::new("Request with unknown id")
         //     ????
@@ -44,19 +43,20 @@ pub fn mutations() -> Vec<MutationInstruction> {
         MutationInstruction::new("Request with extra known optional and proper parameters")
             .query_params(ParamMutation::Proper)
             .expected(StatusCode::OK),
-        MutationInstruction::new("Request with extra unknown parameters <trusmis=mumi>")
-            .query_params(ParamMutation::static_values("trusmis", "mumi"))
-            .expected(StatusCode::OK),
         MutationInstruction::new("Request with extra known optional but with improper parameters")
             .query_params(ParamMutation::Wrong)
             .expected(StatusCode::UNPROCESSABLE_ENTITY),
+
+        MutationInstruction::new("Request with extra unknown parameters <trusmis=mumi>")
+            .query_params(ParamMutation::static_values("trusmis", "mumi"))
+            .expected(StatusCode::OK),
         MutationInstruction::new("Request with wrong content-type <jason>")
             .content_type("minosTest/jason")
             .expected(StatusCode::NOT_ACCEPTABLE),
         MutationInstruction::new("Request with wrong method <TRACE>")
             .method("TRACE")
             .expected(StatusCode::NOT_FOUND),
-        //            .expected(StatusCode::METHOD_NOT_ALLOWED),
+        //  .expected(StatusCode::METHOD_NOT_ALLOWED), Technically this status is more correct
     ]
 }
 
@@ -69,9 +69,9 @@ impl ParamMutation {
 impl MutationInstruction {
     fn new(explanation: &str) -> Self {
         MutationInstruction {
-            content_type: None,   //"application/json".to_string(),
-            method: None,         //"GET".to_string(),
-            crud_operation: None, //CRUD::Index,
+            content_type: None,
+            method: None,
+            crud_operation: None,
             required_params: ParamMutation::Proper,
             query_params: ParamMutation::None,
             expected: StatusCode::OK,
@@ -90,6 +90,11 @@ impl MutationInstruction {
 
     fn query_params(mut self, query_params: ParamMutation) -> Self {
         self.query_params = query_params;
+        self
+    }
+
+    fn required_params(mut self, required_params: ParamMutation) -> Self {
+        self.required_params = required_params;
         self
     }
 

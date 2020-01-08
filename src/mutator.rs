@@ -2,14 +2,12 @@ use crate::known_param::KnownParamCollection;
 use crate::mutation_instructions::MutationInstruction;
 use crate::mutation_instructions::ParamMutation;
 use crate::operation::Endpoint;
-use crate::service::Request;
 use crate::request_param::RequestParam;
+use crate::service::Request;
 use chrono::prelude::*;
-use openapi_utils::{IntegerTypeExt, ParameterDataExt, ParameterExt, ReferenceOrExt, TypeExt};
+use openapi_utils::{IntegerTypeExt, OperationExt, ParameterDataExt, ParameterExt, TypeExt};
 use openapiv3::Type;
 use std::ops::Range;
-
-
 
 pub struct Mutator {
     known_params: KnownParamCollection,
@@ -29,24 +27,16 @@ impl Mutator {
     ) -> Option<Request> {
         let request_path = self.make_path(&endpoint.path_name);
 
-        let mut request_parameters =
-            match self.make_query_params(&endpoint.method, &instructions.query_params) {
-                None => return None,
-                Some(query_params) => query_params
-            };
-
-        let mut required_parameters =
-            match self.make_query_params(&endpoint.method, &instructions.required_params) {
-                None => return None,
-                Some(query_params) => query_params
-            };
-
-        request_parameters.append(&mut required_parameters);
+        let request_parameters = match self.make_query_params(&endpoint, &instructions) {
+            None => return None,
+            Some(r) => r,
+        };
 
         let content_type = instructions
             .content_type
             .clone()
             .unwrap_or("application/json".to_string());
+
         let method = instructions
             .method
             .clone()
@@ -67,23 +57,58 @@ impl Mutator {
         }
     }
 
+    fn make_query_params(
+        &self,
+        endpoint: &Endpoint,
+        instructions: &MutationInstruction,
+    ) -> Option<Vec<RequestParam>> {
+        // TODO: A hack to special case this but this would otherwise produce a mutation which will not fail
+        // even when the instructions say it would
+        if endpoint.method.required_parameters().is_empty()
+            && instructions.required_params == crate::mutation_instructions::ParamMutation::None
+        {
+            return None;
+        }
+
+        let mut request_parameters = match self.mutate_query_params(
+            &endpoint.method.required_parameters(),
+            &instructions.required_params,
+        ) {
+            None => return None,
+            Some(query_params) => query_params,
+        };
+
+        let mut required_parameters = match self.mutate_query_params(
+            &endpoint.method.optional_parameters(),
+            &instructions.query_params,
+        ) {
+            None => return None,
+            Some(query_params) => query_params,
+        };
+
+        request_parameters.append(&mut required_parameters);
+        Some(request_parameters)
+    }
+
     // Returns None when no query params could be created to fulfill this mutation.
     // This happens for instance if we want to create improper parameters
     // But the endpoint does not have any parameters! No request created for this case.
-    fn make_query_params(
+    fn mutate_query_params(
         &self,
-        method: &openapiv3::Operation,
+        params: &Vec<&openapiv3::Parameter>,
         query_params: &ParamMutation,
     ) -> Option<Vec<RequestParam>> {
+        // Can't create any mutation if there is no definition
+
         match query_params {
             ParamMutation::None => Some(vec![]),
             ParamMutation::Static(the_param) => {
                 Some(vec![RequestParam::new(&the_param.name, &the_param.value)])
             }
-            ParamMutation::Proper => Some(self.get_proper_param(method)),
+            ParamMutation::Proper => Some(self.get_proper_param(params)),
             // TODO: properly find wrong parameter here
             ParamMutation::Wrong => {
-                let improper_params = self.get_improper_param(method);
+                let improper_params = self.get_improper_param(params);
                 // If we could not find improper parameters we return None to skip this test
                 // TODO. This is not a very good way of communicating the intent
                 if improper_params.is_empty() {
@@ -99,9 +124,9 @@ impl Mutator {
         }
     }
 
-    fn get_improper_param(&self, method: &openapiv3::Operation) -> Vec<RequestParam> {
-        let params_with_types = self.get_only_params_with_types(method);
-        // TODO: maybe I dont need result.
+    fn get_improper_param(&self, params: &Vec<&openapiv3::Parameter>) -> Vec<RequestParam> {
+        let params_with_types = self.get_only_params_with_types(params.clone());
+
         params_with_types
             .into_iter()
             // We can't make improper of pagination params because they get ignored
@@ -118,8 +143,8 @@ impl Mutator {
             .collect()
     }
 
-    fn get_proper_param(&self, method: &openapiv3::Operation) -> Vec<RequestParam> {
-        let params_with_types = self.get_only_params_with_types(method);
+    fn get_proper_param(&self, params: &Vec<&openapiv3::Parameter>) -> Vec<RequestParam> {
+        let params_with_types = self.get_only_params_with_types(params.clone());
 
         params_with_types
             .into_iter()
@@ -133,23 +158,16 @@ impl Mutator {
             .collect()
     }
 
-    fn get_only_params_with_types(
+    fn get_only_params_with_types<'a>(
         &self,
-        method: &openapiv3::Operation,
-    ) -> Vec<openapiv3::Parameter> {
-        method
-            .parameters
-            .iter()
-            .map(|param_ref| param_ref.to_item_ref().clone())
+        params: Vec<&'a openapiv3::Parameter>,
+    ) -> Vec<&'a openapiv3::Parameter> {
+        params
+            .into_iter()
+            .filter(|&p| p.parameter_data().is_type_defined())
             .collect()
-        // TODO: This method should be returning only params with types, we are returning all
-        // match params {
-        //     None => vec![],
-        //     Some(ps) => ps.filter(|x| x.param_type.is_some()).collect(),
-        // }
     }
 }
-
 
 fn limits(param: &openapiv3::Parameter) -> Range<i64> {
     match param.parameter_data().get_type() {

@@ -52,7 +52,9 @@ pub fn status_error(expected: StatusCode, found: StatusCode) -> DisparityError {
     DisparityError::StatusDisparity { expected, found }
 }
 
-pub fn body_schema_incorrect(errors: valico::ValicoErrors) -> DisparityError {
+pub fn body_schema_incorrect(errors: &mut valico::ValicoErrors) -> DisparityError {
+    // TODO: Add something like "...and 100 other errors" to the output
+    errors.truncate(8); // For instance in big arrays we may have 100s of errors which is difficult to read
     DisparityError::BodySchemaIncorrect(ObjectError(
         errors
             .iter()
