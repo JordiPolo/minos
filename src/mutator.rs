@@ -1,13 +1,15 @@
 use crate::known_param::KnownParamCollection;
+use crate::mutation_instructions::MutationInstruction;
 use crate::mutation_instructions::ParamMutation;
+use crate::operation::Endpoint;
+use crate::service::Request;
 use chrono::prelude::*;
 use openapi_utils::{IntegerTypeExt, ParameterDataExt, ParameterExt, ReferenceOrExt, TypeExt};
 use openapiv3::Type;
 use std::ops::Range;
 
-pub struct Mutator<'a> {
+pub struct Mutator {
     known_params: KnownParamCollection,
-    spec: &'a openapiv3::OpenAPI,
 }
 
 // This is the Spec Request param information and helper methods.
@@ -37,7 +39,7 @@ fn limits(param: &openapiv3::Parameter) -> Range<i64> {
 struct ProperParamsBuilder;
 
 impl ProperParamsBuilder {
-    pub fn create_params(
+    fn create_params(
         param: &openapiv3::Parameter,
         known_params: &KnownParamCollection,
     ) -> RequestParam {
@@ -147,7 +149,7 @@ impl ProperParamsBuilder {
 struct ImproperParamsBuilder;
 
 impl ImproperParamsBuilder {
-    pub fn create_params(param: &openapiv3::Parameter) -> RequestParam {
+    fn create_params(param: &openapiv3::Parameter) -> RequestParam {
         let data = param.parameter_data();
         let name = data.name.clone();
         let p_type = data.get_type();
@@ -165,22 +167,56 @@ impl ImproperParamsBuilder {
     }
 }
 
-impl<'a> Mutator<'a> {
-    pub fn new(spec: &'a openapiv3::OpenAPI) -> Self {
+impl Mutator {
+    pub fn new() -> Self {
         Mutator {
             known_params: KnownParamCollection::new(),
-            spec: spec,
         }
     }
 
-    pub fn make_path(&self, path: &str) -> String {
+    pub fn request(
+        &self,
+        endpoint: &Endpoint,
+        instructions: &MutationInstruction,
+    ) -> Option<Request> {
+        let request_path = self.make_path(&endpoint.path_name);
+        let request_parameters =
+            match self.make_query_params(&endpoint.method, &instructions.query_params) {
+                // No valid query params could be created to fulfill this mutation.
+                // This happens for instance if we want to create improper parameters
+                // But the endpoint does not have any parameters! No request created for this case.
+                None => return None,
+                Some(query_params) => query_params
+                    .into_iter()
+                    .map(|param| (param.name, param.value))
+                    .collect(),
+            };
+
+        let content_type = instructions
+            .content_type
+            .clone()
+            .unwrap_or("application/json".to_string());
+        let method = instructions
+            .method
+            .clone()
+            .unwrap_or(endpoint.crud.to_method_name().to_string());
+
+        let request = Request::new()
+            .path(request_path)
+            .query_params(request_parameters)
+            .content_type(content_type)
+            .set_method(method);
+        Some(request)
+    }
+
+    fn make_path(&self, path: &str) -> String {
         match self.known_params.find_by_path(path) {
             None => String::from(path),
             Some(conversion) => str::replace(path, &conversion.pattern, &conversion.value),
         }
     }
 
-    pub fn make_query_params(
+    fn make_query_params(
         &self,
         method: &openapiv3::Operation,
         query_params: &ParamMutation,

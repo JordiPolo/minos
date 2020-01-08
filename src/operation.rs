@@ -8,6 +8,22 @@ pub enum CRUD {
     Patch,
 }
 
+impl CRUD {
+    // TODO This is kind of a hack to make mutator work with this piece
+    // Probably we want to clean this up or just remove the concept of CRUD
+    // as it is only useful to tell the difference between index and show
+    pub fn to_method_name(&self) -> &str {
+        match self {
+            CRUD::Index => "GET",
+            CRUD::Show => "GET",
+            CRUD::Create => "POST",
+            CRUD::Update => "PUT",
+            CRUD::Patch => "PATCH",
+            CRUD::Delete => "DELETE",
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Endpoint {
     pub crud: CRUD,

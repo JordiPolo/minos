@@ -1,5 +1,5 @@
-use reqwest::StatusCode;
 use openapi_utils::ResponseExt;
+use reqwest::StatusCode;
 //use openapi_utils::SchemaExt;
 
 use crate::error;
@@ -22,9 +22,10 @@ fn is_application_defined_code(expected: StatusCode) -> bool {
 
 fn extract_schema<'a>(
     expected_status_code: StatusCode,
-    expected_body: Option<&'a openapiv3::Response>
+    expected_body: Option<&'a openapiv3::Response>,
 ) -> Result<Option<&'a openapiv3::Schema>, error::DisparityError> {
-    match expected_body { // Check if we even have the code specified in the contract
+    match expected_body {
+        // Check if we even have the code specified in the contract
         None => {
             // If is something apps specify, it totally should be there and we error
             if is_application_defined_code(expected_status_code) {
@@ -42,9 +43,7 @@ fn extract_schema<'a>(
                 None => {
                     // TODO: Maybe we should not fail if for instance error codes do not have a schema
                     if is_application_defined_code(expected_status_code) {
-                        Err(error::DisparityError::SchemaNotFound(
-                            expected_status_code,
-                        ))
+                        Err(error::DisparityError::SchemaNotFound(expected_status_code))
                     } else {
                         Ok(None)
                     }
@@ -57,58 +56,61 @@ fn extract_schema<'a>(
 pub fn validate(
     response: &service::ServiceResponse,
     expected_status_code: StatusCode,
-    expected_body: Option<&openapiv3::Response>
+    expected_body: Option<&openapiv3::Response>,
 ) -> Result<(), error::DisparityError> {
     if response.status != expected_status_code {
-        return Err(error::status_error(
-            expected_status_code,
-            response.status,
-        ));
+        return Err(error::status_error(expected_status_code, response.status));
     }
 
-    let response_body = response.body.as_ref().map_err(|_| error::DisparityError::JsonError)?;
+    let response_body = response
+        .body
+        .as_ref()
+        .map_err(|_| error::DisparityError::JsonError)?;
 
     let schema_body = extract_schema(expected_status_code, expected_body)?;
 
     validate_schema(response_body, schema_body)
-
 }
 
-
-fn validate_schema(body: &serde_json::Value, schema: std::option::Option<&openapiv3::Schema>) -> Result<(), error::DisparityError>{
+fn validate_schema(
+    body: &serde_json::Value,
+    schema: std::option::Option<&openapiv3::Schema>,
+) -> Result<(), error::DisparityError> {
     // Is ok the schema to be empty if there is data to check anyways
     // But if there is anything there we should be having a schema to match against!
     if schema.is_none() {
         if body == &serde_json::Value::Null {
             return Ok(());
         } else {
-            return Err(error::DisparityError::SchemaNotFoundForData(body.clone()))
+            return Err(error::DisparityError::SchemaNotFoundForData(body.clone()));
         }
     }
 
-    // TODO: Also would be good to check the string format. Reuse the StringValidator 
+    // TODO: Also would be good to check the string format. Reuse the StringValidator
 
     let json_v4_schema = openapi_schema_to_json_schema(schema.unwrap());
 
     let mut scope = valico::json_schema::Scope::new();
-    let valico = scope.compile_and_return(json_v4_schema, false).expect("Improper creation of schema");
+    let valico = scope
+        .compile_and_return(json_v4_schema, false)
+        .expect("Improper creation of schema");
     let state = valico.validate(&body);
 
     if state.is_valid() {
         Ok(())
     } else {
-        println!("Response body:\n {}",body);
-        return Err(error::body_schema_incorrect(state.errors))
+        println!("Response body:\n {}", body);
+        return Err(error::body_schema_incorrect(state.errors));
     }
-
 }
 
-// TODO: Do all the proper conversions here with all the differences between formats. 
+// TODO: Do all the proper conversions here with all the differences between formats.
 // Most notably   nullable: true  -> [type, null]
 // See https://github.com/mikunn/openapi-schema-to-json-schema
 fn openapi_schema_to_json_schema(schema_data: &openapiv3::Schema) -> serde_json::Value {
     let serialized = serde_json::to_string(&schema_data).expect("Improper serialization of schema");
 
-    let json_v4_schema: serde_json::Value = serde_json::from_str(&serialized).expect("Improper deser of schema");
+    let json_v4_schema: serde_json::Value =
+        serde_json::from_str(&serialized).expect("Improper deser of schema");
     json_v4_schema
 }

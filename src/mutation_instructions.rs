@@ -3,14 +3,14 @@ use crate::service::QueryParam;
 use reqwest::StatusCode;
 
 #[derive(Debug)]
-pub struct MutationInstruction<'a> {
-    pub content_type: &'a str,
-    pub method: &'a str,
-    pub crud_operation: CRUD,
+pub struct MutationInstruction {
+    pub content_type: Option<String>,
+    pub method: Option<String>,
+    pub crud_operation: Option<CRUD>,
     pub required_params: ParamMutation, // Required parameters in path or query string
     pub query_params: ParamMutation,    // Optional query parameters
     pub expected: StatusCode,
-    pub explanation: &'a str,
+    pub explanation: String,
 }
 
 #[derive(Debug)]
@@ -22,11 +22,41 @@ pub enum ParamMutation {
     //    Empty, what would happen in this case?
 }
 
-pub fn instructions_for_operation<'a>(crud: CRUD) -> Vec<MutationInstruction<'a>> {
-    mutations()
-        .into_iter()
-        .filter(|mutation| mutation.crud_operation == crud)
-        .collect()
+pub fn mutations() -> Vec<MutationInstruction> {
+    vec![
+        // TODO: Read all this from a file
+        MutationInstruction::new(
+            "Request with proper required parameters and no optional parameters",
+        )
+        .expected(StatusCode::OK),
+        // TODO
+        // MutationInstruction::new("Request without the required parameters")
+        //     .required_params(ParamMutation::None)
+        //     .expected(StatusCode::UNPROCESSABLE_ENTITY),
+        // MutationInstruction::new("Request with incorrect required parameters")
+        //     .required_params(ParamMutation::Wrong)
+        //     .expected(StatusCode::UNPROCESSABLE_ENTITY),
+
+        // MutationInstruction::new("Request with unknown id")
+        //     ????
+        //     .expected(StatusCode::NOT_FOUND),
+        MutationInstruction::new("Request with extra known optional and proper parameters")
+            .query_params(ParamMutation::Proper)
+            .expected(StatusCode::OK),
+        MutationInstruction::new("Request with extra unknown parameters <trusmis=mumi>")
+            .query_params(ParamMutation::static_values("trusmis", "mumi"))
+            .expected(StatusCode::OK),
+        MutationInstruction::new("Request with extra known optional but with improper parameters")
+            .query_params(ParamMutation::Wrong)
+            .expected(StatusCode::UNPROCESSABLE_ENTITY),
+        MutationInstruction::new("Request with wrong content-type <jason>")
+            .content_type("minosTest/jason")
+            .expected(StatusCode::NOT_ACCEPTABLE),
+        MutationInstruction::new("Request with wrong method <TRACE>")
+            .method("TRACE")
+            .expected(StatusCode::NOT_FOUND),
+        //            .expected(StatusCode::METHOD_NOT_ALLOWED),
+    ]
 }
 
 impl ParamMutation {
@@ -35,20 +65,20 @@ impl ParamMutation {
     }
 }
 
-impl<'a> MutationInstruction<'a> {
-    fn new(explanation: &'a str) -> Self {
+impl MutationInstruction {
+    fn new(explanation: &str) -> Self {
         MutationInstruction {
-            content_type: "application/json",
-            method: "GET",
-            crud_operation: CRUD::Index,
+            content_type: None,   //"application/json".to_string(),
+            method: None,         //"GET".to_string(),
+            crud_operation: None, //CRUD::Index,
             required_params: ParamMutation::Proper,
             query_params: ParamMutation::None,
             expected: StatusCode::OK,
-            explanation,
+            explanation: explanation.to_string(),
         }
     }
-    fn content_type(mut self, content_type: &'a str) -> Self {
-        self.content_type = content_type;
+    fn content_type(mut self, content_type: &str) -> Self {
+        self.content_type = Some(content_type.to_string());
         self
     }
 
@@ -62,46 +92,8 @@ impl<'a> MutationInstruction<'a> {
         self
     }
 
-    fn method(mut self, method: &'a str) -> Self {
-        self.method = method;
+    fn method(mut self, method: &str) -> Self {
+        self.method = Some(method.to_string());
         self
     }
-
-    fn crud_operation(mut self, crud_operation: CRUD) -> Self {
-        self.crud_operation = crud_operation;
-        self
-    }
-}
-
-// Flow rate
-// queue health
-
-
-fn mutations<'a>() -> Vec<MutationInstruction<'a>> {
-    vec![
-        //Think how to do this better
-        // MutationInstruction::new("GET resource with no optional parameters")
-        // .query_params(ParamMutation::None)
-        // .expected(StatusCode::OK)
-        // .crud_operations(CRUD::Show， CRUD::Index),
-        MutationInstruction::new("GET with no optional parameters")
-            .query_params(ParamMutation::None)
-            .expected(StatusCode::OK),
-        MutationInstruction::new("GET with extra known optional and proper parameters")
-            .query_params(ParamMutation::Proper)
-            .expected(StatusCode::OK),
-        MutationInstruction::new("GET with extra unknown parameters <trusmis=mumi>")
-            .query_params(ParamMutation::static_values("trusmis", "mumi"))
-            .expected(StatusCode::OK),
-        MutationInstruction::new("GET with extra known optional but with improper parameters")
-            .query_params(ParamMutation::Wrong)
-            .expected(StatusCode::UNPROCESSABLE_ENTITY),
-// Applicable to all endpoints
-        MutationInstruction::new("GET with wrong content-type <jason>")
-            .content_type("minosTest/jason")
-            .expected(StatusCode::NOT_ACCEPTABLE),
-        MutationInstruction::new("Request with wrong method <TRACE>")
-            .method("TRACE")
-            .expected(StatusCode::METHOD_NOT_ALLOWED),
-    ]
 }

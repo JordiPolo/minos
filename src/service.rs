@@ -18,19 +18,19 @@ use reqwest::Method;
 pub type QueryParam = (String, String);
 
 #[derive(Debug)]
-pub struct Request<'a> {
+pub struct Request {
     path: String,
-    content_type: &'a str,
-    method: &'a str,
+    content_type: String,
+    method: String,
     query_params: Vec<QueryParam>,
 }
 
-impl<'a> Request<'a> {
-    pub fn new() -> Request<'a> {
+impl Request {
+    pub fn new() -> Request {
         Request {
             path: "".to_string(),
-            content_type: "json",
-            method: "get",
+            content_type: "json".to_string(),
+            method: "get".to_string(),
             query_params: vec![],
         }
     }
@@ -45,12 +45,12 @@ impl<'a> Request<'a> {
         self
     }
 
-    pub fn content_type(mut self, content_type: &'a str) -> Self {
+    pub fn content_type(mut self, content_type: String) -> Self {
         self.content_type = content_type;
         self
     }
 
-    pub fn set_method(mut self, method: &'a str) -> Self {
+    pub fn set_method(mut self, method: String) -> Self {
         self.method = method;
         self
     }
@@ -71,10 +71,10 @@ impl<'a> Request<'a> {
         if self.is_method_with_data() {
             request_headers.insert(
                 CONTENT_TYPE,
-                HeaderValue::from_str(self.content_type).unwrap(),
+                HeaderValue::from_str(&self.content_type).unwrap(),
             );
         }
-        request_headers.insert(ACCEPT, HeaderValue::from_str(self.content_type).unwrap());
+        request_headers.insert(ACCEPT, HeaderValue::from_str(&self.content_type).unwrap());
         request_headers
     }
 
@@ -96,7 +96,7 @@ impl<'a> Request<'a> {
     }
 }
 
-impl<'a> fmt::Display for Request<'a> {
+impl fmt::Display for Request {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} {}", self.method, self.path_and_query())
     }
@@ -139,7 +139,7 @@ impl Service {
         } else {
             None
         };
-    //    let server = None;
+        //    let server = None;
 
         let client = reqwest::blocking::Client::new();
         Service {
@@ -150,30 +150,27 @@ impl Service {
         }
     }
 
-    pub fn send(&self, request: &Request) -> ServiceResponse {
+    pub fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
         let endpoint = request.url(&self.base_url, &self.base_path);
-        println!("{:?}", endpoint);
+        // println!("{:?}", endpoint);
         // TODO: debugging mode
         //   println!("{:?}", request.headers());
         let resp = self
             .client
             .request(request.method(), &endpoint)
             .headers(request.headers())
-            .send()
-            .expect("The request to the endpoint failed.");
+            .send()?;
 
         let status = resp.status();
 
-        let body = resp
-            .text()
-            .expect("It was not possible to read data from body.");
+        let body = resp.text()?;
         // TODO: This should be ok on debug mode.
         // for header in resp.headers() {
         //     println!("response header {:?}", header);
         // }
-        ServiceResponse {
+        Ok(ServiceResponse {
             status,
             body: serde_json::from_str(&body),
-        }
+        })
     }
 }
