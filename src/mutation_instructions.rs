@@ -1,5 +1,5 @@
 use crate::operation::CRUD;
-use crate::service::QueryParam;
+use crate::request_param::RequestParam;
 use reqwest::StatusCode;
 
 #[derive(Debug)]
@@ -7,7 +7,8 @@ pub struct MutationInstruction {
     pub content_type: Option<String>,
     pub method: Option<String>,
     pub crud_operation: Option<CRUD>,
-    pub required_params: ParamMutation, // Required parameters in path or query string
+    // pub path_params: ParamMutation,  // TODO allow to mutate the path 
+    pub required_params: ParamMutation, // Required parameters in query string
     pub query_params: ParamMutation,    // Optional query parameters
     pub expected: StatusCode,
     pub explanation: String,
@@ -15,7 +16,7 @@ pub struct MutationInstruction {
 
 #[derive(Debug)]
 pub enum ParamMutation {
-    Static(QueryParam),
+    Static(RequestParam),
     Proper,
     Wrong,
     None,
@@ -61,7 +62,7 @@ pub fn mutations() -> Vec<MutationInstruction> {
 
 impl ParamMutation {
     fn static_values(name: &str, value: &str) -> Self {
-        ParamMutation::Static((name.to_string(), value.to_string()))
+        ParamMutation::Static(RequestParam::new(name, value))
     }
 }
 

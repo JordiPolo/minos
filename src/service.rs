@@ -8,21 +8,18 @@ use std::{
 };
 
 use crate::cli_args::*;
+use crate::request_param::RequestParam;
 use reqwest::header::ACCEPT;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::Method;
-
-// TODO: tuple struct?
-// This is the query param as used by the service and in requests to make real calls.
-pub type QueryParam = (String, String);
 
 #[derive(Debug)]
 pub struct Request {
     path: String,
     content_type: String,
     method: String,
-    query_params: Vec<QueryParam>,
+    query_params: Vec<RequestParam>,
 }
 
 impl Request {
@@ -40,7 +37,7 @@ impl Request {
         self
     }
 
-    pub fn query_params(mut self, params: Vec<QueryParam>) -> Self {
+    pub fn query_params(mut self, params: Vec<RequestParam>) -> Self {
         self.query_params = params;
         self
     }
@@ -83,7 +80,7 @@ impl Request {
         if !self.query_params.is_empty() {
             param_string = "?".to_string();
             for query_param in self.query_params.iter() {
-                param_string.push_str(&format!("{}={}&", query_param.0, query_param.1));
+                param_string.push_str(&format!("{}={}&", query_param.name, query_param.value));
             }
             let len = param_string.len();
             param_string.truncate(len - 1);

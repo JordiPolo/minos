@@ -8,6 +8,7 @@ mod known_param;
 mod mutation_instructions;
 mod mutator;
 mod operation;
+mod request_param;
 mod scenario;
 mod service;
 mod spec;
