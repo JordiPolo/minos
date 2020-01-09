@@ -6,13 +6,14 @@ env:
   global:
   - CRATE_NAME=minos
   - RUST_BACKTRACE=full
+  - secure: bQSjlSYpsxPQwuxccbvOarxg9yLBSXR8uM1pmTUQw0qOBlsh2qukIrcYBqy9nytBrtib+ykO0AzcavqCocHJv4t17CbdBZFelTshFHngmfqGgsS5R4zQ6eNFQ11P8agVaX4kB9mXQBRNQQm6AXSrC3OEMr2cj3qlMIKsPzSouiYjhE1loGVkMgInzwjjkXAzwVWuPim2kPaJDlQvcIpXB2ZZnc5l7LxfH1BLkBo2bVjLBjVpIXY6fJyvkTGBRjq8mjATXvgfFrVve8blN6xFoBaxAqNBN8YJSX9rQfZvmxOLfGpkJvB2GQ1ib7z4nx7Ok9liG3EipMbUD0bh3v3F+F8xuzTfAT/NLQPq/7Vx2ql4bN/86poEghfeGbf+mjLkVJakn5LyaJ2MVIREoGFj1GGS/pB2DC3gWTQPshGFe8Yu8PhsqkuM/1YdJ09cmbBWBQnDJF4liXtbbps8sVg/WGSTQweUG3YbGCsKRh+3qm4t278Nlu5NahgrQFHdt8WUX8eruw5uvyP3Ai1Z1ur9ZJTu6pWWyeglyxJgmuAe2t81b4RuinNZXW0EtEbTCDXBFQi9i6w4O8lmFlEFwjyq6WG0leo86mowWVnPXQAD3/B5sRFkBKt3gBwDkeS8g+nz1Biqr80KGcTJY6RAOh/1Y05Y0r1TbA7yQ9G/L/z7moQ=
 matrix:
   include:
-    - env: TARGET=x86_64-unknown-linux-musl
-      rust: nightly
-    - env: TARGET=x86_64-apple-darwin
-      os: osx
-      rust: nightly
+  - env: TARGET=x86_64-unknown-linux-musl
+    rust: nightly
+  - env: TARGET=x86_64-apple-darwin
+    os: osx
+    rust: nightly
 before_install:
 - set -e
 - rustup self update
@@ -26,7 +27,7 @@ before_deploy:
 - sh ci/before_deploy.sh
 deploy:
   api_key:
-    secure: YDB8NEFbUnJPqn0w7S3YWm2NnPF3tjhDKjKmfjTJy1Lq2g+rrhfyyJrRKceUZAop9musI59/14Gz8TIKJrv1ZiWe94Md16U2Jn8oDTAFe0euO3uyi/3Bww5I/iuHtjnwHNWGpPkJkecWS0+rO16lJeEcdca9n6M6SS3wuurrymRThjZLUqsO79ZlpjuPYNp9nr2/C5UgL5jsV4yr2/2GNmGpKr2pmYR12inNgKoqHDaoi9IEeIfSZdyDghd9rHmBDWZ///Cupa1tWJ4T2Xq0Z3BU5IIiOXK4O8NNCq57SO+SL92kLkN/Dm1cyyDdnCSRVIE3oQxGBzeFF+g2Qs3KVKV6MPjJi7nsCR7PeLkj8ayZ8RUA+rwWyKpiK/AFPzmdBlORDnAuAm/XzWvM0YHyymFKzIfq5PWmCwyPJU+HQtD5QiM5ZckE6gXDdEjQ0mtZyegnub+SaaqDGp0EwLSTagRIcQn9AfXWSKn05MgpXjUbmVllE2GcaQTomO3SV9f4HfixxiK7m8+Co5Boi84G7gJ4/u6yz4w78JktA9FfxvOvw8TgxC68nMmeIO2+1/Swj6mNANKSJiB+wSRrenMtyMxfEyoa2aSluB5k9ZgKKtgnPZ+uZM8t0hfHIXRJ45+wGpyET2y/o41HDgXDZQDxRGFKNf34w9BCF9umyUNC2FQ=
+    secure: bQSjlSYpsxPQwuxccbvOarxg9yLBSXR8uM1pmTUQw0qOBlsh2qukIrcYBqy9nytBrtib+ykO0AzcavqCocHJv4t17CbdBZFelTshFHngmfqGgsS5R4zQ6eNFQ11P8agVaX4kB9mXQBRNQQm6AXSrC3OEMr2cj3qlMIKsPzSouiYjhE1loGVkMgInzwjjkXAzwVWuPim2kPaJDlQvcIpXB2ZZnc5l7LxfH1BLkBo2bVjLBjVpIXY6fJyvkTGBRjq8mjATXvgfFrVve8blN6xFoBaxAqNBN8YJSX9rQfZvmxOLfGpkJvB2GQ1ib7z4nx7Ok9liG3EipMbUD0bh3v3F+F8xuzTfAT/NLQPq/7Vx2ql4bN/86poEghfeGbf+mjLkVJakn5LyaJ2MVIREoGFj1GGS/pB2DC3gWTQPshGFe8Yu8PhsqkuM/1YdJ09cmbBWBQnDJF4liXtbbps8sVg/WGSTQweUG3YbGCsKRh+3qm4t278Nlu5NahgrQFHdt8WUX8eruw5uvyP3Ai1Z1ur9ZJTu6pWWyeglyxJgmuAe2t81b4RuinNZXW0EtEbTCDXBFQi9i6w4O8lmFlEFwjyq6WG0leo86mowWVnPXQAD3/B5sRFkBKt3gBwDkeS8g+nz1Biqr80KGcTJY6RAOh/1Y05Y0r1TbA7yQ9G/L/z7moQ=
   file_glob: true
   file: "$CRATE_NAME-$TRAVIS_TAG-$TARGET.*"
   on:
