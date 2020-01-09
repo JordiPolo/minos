@@ -32,6 +32,8 @@ impl Mutator {
             Some(r) => r,
         };
 
+        // TODO: Support path params mutation
+
         let content_type = instructions
             .content_type
             .clone()

@@ -7,11 +7,17 @@ pub struct MutationInstruction {
     pub content_type: Option<String>,
     pub method: Option<String>,
     pub crud_operation: Option<CRUD>,
-    // pub path_params: ParamMutation,  // TODO allow to mutate the path 
+    pub path_params: PathMutation,  // TODO allow to mutate the path
     pub required_params: ParamMutation, // Required parameters in query string
     pub query_params: ParamMutation,    // Optional query parameters
     pub expected: StatusCode,
     pub explanation: String,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum PathMutation {
+    Proper,
+    Random,
 }
 
 #[derive(Debug, PartialEq)]
@@ -37,9 +43,10 @@ pub fn mutations() -> Vec<MutationInstruction> {
             .required_params(ParamMutation::Wrong)
             .expected(StatusCode::UNPROCESSABLE_ENTITY),
 
-        // MutationInstruction::new("Request with unknown id")
-        //     ????
-        //     .expected(StatusCode::NOT_FOUND),
+        MutationInstruction::new("Request with unknown id")
+            .path_params(PathMutation::Random)
+            .expected(StatusCode::NOT_FOUND),
+
         MutationInstruction::new("Request with extra known optional and proper parameters")
             .query_params(ParamMutation::Proper)
             .expected(StatusCode::OK),
@@ -56,7 +63,7 @@ pub fn mutations() -> Vec<MutationInstruction> {
         MutationInstruction::new("Request with wrong method <TRACE>")
             .method("TRACE")
             .expected(StatusCode::NOT_FOUND),
-        //  .expected(StatusCode::METHOD_NOT_ALLOWED), Technically this status is more correct
+        //  .expected(StatusCode::METHOD_NOT_ALLOWED), Technically this status is more correct TODO
     ]
 }
 
@@ -74,6 +81,7 @@ impl MutationInstruction {
             crud_operation: None,
             required_params: ParamMutation::Proper,
             query_params: ParamMutation::None,
+            path_params: PathMutation::Proper,
             expected: StatusCode::OK,
             explanation: explanation.to_string(),
         }
@@ -95,6 +103,11 @@ impl MutationInstruction {
 
     fn required_params(mut self, required_params: ParamMutation) -> Self {
         self.required_params = required_params;
+        self
+    }
+
+    fn path_params(mut self, path_params: PathMutation) -> Self {
+        self.path_params = path_params;
         self
     }
 

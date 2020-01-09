@@ -1,10 +1,12 @@
-dist: trusty
+dist: xenial
 language: rust
 services: docker
 sudo: required
 env:
   global:
   - CRATE_NAME=minos
+  - RUST_BACKTRACE: full
+
 matrix:
   include:
     - env: TARGET=x86_64-unknown-linux-musl
