@@ -15,13 +15,12 @@ mod validator;
 use crate::service::Service;
 use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
 use scenario::Scenario;
+use std::time::Instant;
 
 fn main() {
-    let config = cli_args::config();
-    println!("{:?}", config);
-    let spec = spec::read(&config.filename).deref_all();
+    let config  = cli_args::config();
+    let spec    = spec::read(&config.filename).deref_all();
     let service = Service::new(&config, spec.servers[0].base_path());
-
     let mutator = mutator::Mutator::new();
 
     // Create endpoints from the spec file.
@@ -59,10 +58,11 @@ fn main() {
         Vec<scenario::ScenarioExecution>,
     ) = scenario_executions.partition(|s| s.request.is_some());
 
+    let start = Instant::now();
     // Run each scenario execution, get the response and validate it with what we expect
-    for execution in runable {
+    for execution in &runable {
         cli::print_mutation_scenario(
-            &execution.scenario.endpoint.path_name,
+            &execution.scenario.endpoint,
             &execution.scenario.instructions,
         );
 
@@ -90,4 +90,7 @@ fn main() {
         }
         println!();
     }
+
+    // TODO: Output if we failed or all passed
+    println!("Executed {} scenarios in {:?}", runable.len(), start.elapsed());
 }

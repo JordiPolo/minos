@@ -107,7 +107,7 @@ impl Mutator {
             ParamMutation::Static(the_param) => {
                 Some(vec![RequestParam::new(&the_param.name, &the_param.value)])
             }
-            ParamMutation::Proper => Some(self.get_proper_param(params)),
+            ParamMutation::Proper => self.get_proper_param(params),
             // TODO: properly find wrong parameter here
             ParamMutation::Wrong => {
                 let improper_params = self.get_improper_param(params);
@@ -145,7 +145,7 @@ impl Mutator {
             .collect()
     }
 
-    fn get_proper_param(&self, params: &Vec<&openapiv3::Parameter>) -> Vec<RequestParam> {
+    fn get_proper_param(&self, params: &Vec<&openapiv3::Parameter>) -> Option<Vec<RequestParam>> {
         let params_with_types = self.get_only_params_with_types(params.clone());
 
         params_with_types
@@ -157,7 +157,7 @@ impl Mutator {
                     && (!name.starts_with("search") || self.known_params.param_known(&name))
             })
             .map(|param| ProperParamsBuilder::create_params(&param, &self.known_params))
-            .collect()
+            .collect() // This will transform Vec<Option<X>> to Option<Vec<X>>
     }
 
     fn get_only_params_with_types<'a>(
@@ -185,11 +185,11 @@ impl ProperParamsBuilder {
     fn create_params(
         param: &openapiv3::Parameter,
         known_params: &KnownParamCollection,
-    ) -> RequestParam {
+    ) -> Option<RequestParam> {
         //    println!("{:?}", param);
         let name = param.name();
         if known_params.param_known(&name) {
-            return RequestParam::new(&name, &known_params.param_value(&name));
+            return Some(RequestParam::new(&name, &known_params.param_value(&name)));
         }
         if name == "page" || name == "per_page" || name == "include_count" {
             return ProperParamsBuilder::pagination_param(&param);
@@ -200,13 +200,13 @@ impl ProperParamsBuilder {
             Type::String(openapiv3::StringType { format, .. }) => {
                 ProperParamsBuilder::string_request_param(&param, &format)
             }
-            _ => RequestParam::new(&name, "truething"),
+            _ => Some(RequestParam::new(&name, "truething")),
         }
     }
 
     // Get a valid param, if possible not the default one.
-    fn boolean_request_param(param: &openapiv3::Parameter) -> RequestParam {
-        RequestParam::new(param.name(), "false")
+    fn boolean_request_param(param: &openapiv3::Parameter) -> Option<RequestParam> {
+        Some(RequestParam::new(param.name(), "false"))
         // TODO: find default
         // if param.clone().default.unwrap_or(true.into()) == true.into() {
         //     RequestParam::new(&param.name, "false")
@@ -215,7 +215,7 @@ impl ProperParamsBuilder {
         // }
     }
 
-    fn integer_request_param(param: &openapiv3::Parameter) -> RequestParam {
+    fn integer_request_param(param: &openapiv3::Parameter) -> Option<RequestParam> {
         let default: i64 = 1; // TODO: param.clone().default.unwrap_or(1.into()).into();
         let minmax = limits(param);
         let min = minmax.start;
@@ -224,7 +224,7 @@ impl ProperParamsBuilder {
         if value == default && value < max {
             value += 1;
         }
-        RequestParam::new(&param.name(), &format!("{:?}", value))
+        Some(RequestParam::new(&param.name(), &format!("{:?}", value)))
     }
 
     // TODO: recover this
@@ -242,32 +242,34 @@ impl ProperParamsBuilder {
     fn string_request_param(
         param: &openapiv3::Parameter,
         format: &openapiv3::VariantOrUnknownOrEmpty<openapiv3::StringFormat>,
-    ) -> RequestParam {
+    ) -> Option<RequestParam> {
         let name = param.parameter_data().name.clone();
         match format {
             openapiv3::VariantOrUnknownOrEmpty::Item(string_format) => match string_format {
                 openapiv3::StringFormat::Date => {
-                    RequestParam::new(&name, &format!("{:?}", Utc.ymd(2018, 11, 28)))
+                    Some(RequestParam::new(&name, &format!("{:?}", Utc.ymd(2018, 11, 28))))
                 }
                 openapiv3::StringFormat::DateTime => {
                     let date_time = Utc.ymd(2018, 11, 28).and_hms(12, 0, 9);
-                    RequestParam::new(&name, &format!("{:?}", date_time))
+                    Some(RequestParam::new(&name, &format!("{:?}", date_time)))
                 }
                 _ => unimplemented!("String format not supported"),
             },
             openapiv3::VariantOrUnknownOrEmpty::Unknown(string) => {
                 if string == "uuid" {
-                    let uuid = uuid::Uuid::new_v4();
-                    RequestParam::new(&name, &format!("{:?}", uuid))
+                    // We can't just do a random uuid, as these will almost certainly fail
+                    None
+                    // let uuid = uuid::Uuid::new_v4();
+                    // RequestParam::new(&name, &format!("{:?}", uuid))
                 } else {
-                    RequestParam::new(&name, "PLAIN_STRING")
+                    Some(RequestParam::new(&name, "PLAIN_STRING"))
                     // TODO plain string
                     // unimplemented!("No plain string support")
                 }
             }
             openapiv3::VariantOrUnknownOrEmpty::Empty => {
                 // TODO Better idea here
-                RequestParam::new(&name, "PLAIN_STRING")
+                Some(RequestParam::new(&name, "PLAIN_STRING"))
                 //unimplemented!("No plain string support")
             }
         }
@@ -276,15 +278,15 @@ impl ProperParamsBuilder {
     }
 
     // Proper pagination params as defined by Github.
-    fn pagination_param(param: &openapiv3::Parameter) -> RequestParam {
+    fn pagination_param(param: &openapiv3::Parameter) -> Option<RequestParam> {
         let name = param.name();
         if name == "page" {
-            RequestParam::new(&name, "1")
+            Some(RequestParam::new(&name, "1"))
         } else if name == "per_page" {
             ProperParamsBuilder::integer_request_param(&param)
         } else {
             // include_count
-            RequestParam::new(&name, "true")
+            Some(RequestParam::new(&name, "true"))
         }
     }
 }

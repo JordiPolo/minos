@@ -1,15 +1,16 @@
 use std::fmt::Display;
 use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use crate::operation::Endpoint;
 
 use crate::mutation_instructions;
 
 pub fn print_mutation_scenario(
-    path_name: &str,
+    endpoint: &Endpoint,
     mutation: &mutation_instructions::MutationInstruction,
 ) {
     print_scenario("Scenario:");
-    print_scenario(path_name);
+    print_scenario(format!("{} {}", endpoint.crud.to_method_name(), endpoint.path_name));
     print_scenario(format!("  {}", mutation.explanation));
     print_scenario(format!("  Expects {}", mutation.expected));
 }
