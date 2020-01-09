@@ -1,5 +1,3 @@
-//mod checkers;
-//mod schema;
 //mod string_validator;
 mod cli;
 mod cli_args;
