@@ -7,7 +7,7 @@ pub struct MutationInstruction {
     pub content_type: Option<String>,
     pub method: Option<String>,
     pub crud_operation: Option<CRUD>,
-    pub path_params: PathMutation,  // TODO allow to mutate the path
+    pub path_params: PathMutation,
     pub required_params: ParamMutation, // Required parameters in query string
     pub query_params: ParamMutation,    // Optional query parameters
     pub expected: StatusCode,
@@ -42,18 +42,15 @@ pub fn mutations() -> Vec<MutationInstruction> {
         MutationInstruction::new("Request with incorrect required parameters")
             .required_params(ParamMutation::Wrong)
             .expected(StatusCode::UNPROCESSABLE_ENTITY),
-
-        MutationInstruction::new("Request with unknown id")
+        MutationInstruction::new("Request with unknown id in the path")
             .path_params(PathMutation::Random)
             .expected(StatusCode::NOT_FOUND),
-
         MutationInstruction::new("Request with extra known optional and proper parameters")
             .query_params(ParamMutation::Proper)
             .expected(StatusCode::OK),
         MutationInstruction::new("Request with extra known optional but with improper parameters")
             .query_params(ParamMutation::Wrong)
             .expected(StatusCode::UNPROCESSABLE_ENTITY),
-
         MutationInstruction::new("Request with extra unknown parameters <trusmis=mumi>")
             .query_params(ParamMutation::static_values("trusmis", "mumi"))
             .expected(StatusCode::OK),

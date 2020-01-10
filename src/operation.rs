@@ -43,7 +43,7 @@ impl Endpoint {
     // TODO Return Vec which may be empty instead
     pub fn create_supported_endpoint(path_name: &str, methods: &openapiv3::PathItem) -> Vec<Self> {
         let mut vec = Vec::new();
-        if Endpoint::url_ends_in_variable(path_name) {
+        if Endpoint::url_with_variable(path_name) {
             let maybe_get = methods
                 .get
                 .clone()
@@ -83,7 +83,7 @@ impl Endpoint {
         }
     }
 
-    fn url_ends_in_variable(path_name: &str) -> bool {
-        path_name.ends_with('}')
+    fn url_with_variable(path_name: &str) -> bool {
+        path_name.contains('}')
     }
 }

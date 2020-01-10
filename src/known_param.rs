@@ -6,7 +6,7 @@ pub struct KnownParam {
 }
 
 impl KnownParam {
-    pub fn new(data: &[&str]) -> Self {
+    fn new(data: &[&str]) -> Self {
         KnownParam {
             pattern: data[1].to_string(),
             value: data[2].to_string(),
@@ -55,19 +55,20 @@ impl KnownParamCollection {
     }
 
     fn read_known_params() -> Vec<KnownParam> {
-        let mut result = vec![];
-        match std::fs::read_to_string("conversions.minos") {
+        match KnownParamCollection::_read_known_params() {
             Err(_) => vec![],
-            Ok(contents) => {
-                for line in contents.split('\n') {
-                    let parts: Vec<&str> = line.split(',').collect();
-                    if parts.len() == 3 {
-                        result.push(KnownParam::new(&parts))
-                    }
-                }
-                println!("{:?}", result);
-                result
+            Ok(d) => d,
+        }
+    }
+    fn _read_known_params() -> Result<Vec<KnownParam>, std::io::Error> {
+        let mut result = vec![];
+        let filedata = std::fs::read_to_string("conversions.minos")?;
+        for line in filedata.split('\n') {
+            let parts: Vec<&str> = line.split(',').collect();
+            if parts.len() == 3 {
+                result.push(KnownParam::new(&parts))
             }
         }
+        Ok(result)
     }
 }

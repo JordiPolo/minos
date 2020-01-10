@@ -18,8 +18,8 @@ use scenario::Scenario;
 use std::time::Instant;
 
 fn main() {
-    let config  = cli_args::config();
-    let spec    = spec::read(&config.filename).deref_all();
+    let config = cli_args::config();
+    let spec = spec::read(&config.filename).deref_all();
     let service = Service::new(&config, spec.servers[0].base_path());
     let mutator = mutator::Mutator::new();
 
@@ -92,5 +92,9 @@ fn main() {
     }
 
     // TODO: Output if we failed or all passed
-    println!("Executed {} scenarios in {:?}", runable.len(), start.elapsed());
+    println!(
+        "Executed {} scenarios in {:?}",
+        runable.len(),
+        start.elapsed()
+    );
 }

@@ -1,6 +1,6 @@
 use crate::known_param::KnownParamCollection;
 use crate::mutation_instructions::MutationInstruction;
-use crate::mutation_instructions::ParamMutation;
+use crate::mutation_instructions::{ParamMutation, PathMutation};
 use crate::operation::Endpoint;
 use crate::request_param::RequestParam;
 use crate::service::Request;
@@ -25,14 +25,8 @@ impl Mutator {
         endpoint: &Endpoint,
         instructions: &MutationInstruction,
     ) -> Option<Request> {
-        let request_path = self.make_path(&endpoint.path_name);
-
-        let request_parameters = match self.make_query_params(&endpoint, &instructions) {
-            None => return None,
-            Some(r) => r,
-        };
-
-        // TODO: Support path params mutation
+        let request_path = self.make_path(&endpoint.path_name, &instructions)?;
+        let request_parameters = self.make_query_params(&endpoint, &instructions)?;
 
         let content_type = instructions
             .content_type
@@ -52,10 +46,19 @@ impl Mutator {
         Some(request)
     }
 
-    fn make_path(&self, path: &str) -> String {
-        match self.known_params.find_by_path(path) {
-            None => String::from(path),
-            Some(conversion) => str::replace(path, &conversion.pattern, &conversion.value),
+    fn make_path(&self, path: &str, instructions: &MutationInstruction) -> Option<String> {
+        if !path.contains('}') {
+            Some(String::from(path))
+        } else {
+            let conversion = self.known_params.find_by_path(path)?;
+            match instructions.path_params {
+                PathMutation::Proper => {
+                    Some(str::replace(path, &conversion.pattern, &conversion.value))
+                }
+                PathMutation::Random => {
+                    Some(str::replace(path, &conversion.pattern, "wrongPathItemHere"))
+                }
+            }
         }
     }
 
@@ -246,9 +249,10 @@ impl ProperParamsBuilder {
         let name = param.parameter_data().name.clone();
         match format {
             openapiv3::VariantOrUnknownOrEmpty::Item(string_format) => match string_format {
-                openapiv3::StringFormat::Date => {
-                    Some(RequestParam::new(&name, &format!("{:?}", Utc.ymd(2018, 11, 28))))
-                }
+                openapiv3::StringFormat::Date => Some(RequestParam::new(
+                    &name,
+                    &format!("{:?}", Utc.ymd(2018, 11, 28)),
+                )),
                 openapiv3::StringFormat::DateTime => {
                     let date_time = Utc.ymd(2018, 11, 28).and_hms(12, 0, 9);
                     Some(RequestParam::new(&name, &format!("{:?}", date_time)))
@@ -259,8 +263,8 @@ impl ProperParamsBuilder {
                 if string == "uuid" {
                     // We can't just do a random uuid, as these will almost certainly fail
                     None
-                    // let uuid = uuid::Uuid::new_v4();
-                    // RequestParam::new(&name, &format!("{:?}", uuid))
+                // let uuid = uuid::Uuid::new_v4();
+                // RequestParam::new(&name, &format!("{:?}", uuid))
                 } else {
                     Some(RequestParam::new(&name, "PLAIN_STRING"))
                     // TODO plain string
@@ -296,18 +300,15 @@ struct ImproperParamsBuilder;
 impl ImproperParamsBuilder {
     fn create_params(param: &openapiv3::Parameter) -> RequestParam {
         let data = param.parameter_data();
-        let name = data.name.clone();
-        let p_type = data.get_type();
 
-        if p_type.is_bool() {
-            RequestParam::new(&name, "-1")
-        } else if p_type.is_integer() || p_type.is_number() {
-            RequestParam::new(&name, "NotAnIntegerhahahaha")
-        } else {
-            // if param.maxLength.is_some() {
-            //     lenght
-            // }
-            RequestParam::new(&name, "-1")
-        } //string case, not sure how to break it best
+        match data.get_type() {
+            Type::Boolean { .. } => RequestParam::new(&data.name, "-1"),
+            Type::Integer { .. } | Type::Number { .. } => {
+                RequestParam::new(&data.name, "NotAnIntegerhahahaha")
+            }
+            Type::String { .. } => RequestParam::new(&data.name, "-1"), // TODO check format and make something wrong
+            Type::Array { .. } => RequestParam::new(&data.name, "notAnArray"),
+            Type::Object { .. } => RequestParam::new(&data.name, "notAnObject"),
+        }
     }
 }

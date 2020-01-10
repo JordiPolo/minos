@@ -99,7 +99,7 @@ fn validate_schema(
     if state.is_valid() {
         Ok(())
     } else {
-       // println!("Response body:\n {}", body);
+        // println!("Response body:\n {}", body);
         return Err(error::body_schema_incorrect(&mut state.errors));
     }
 }
