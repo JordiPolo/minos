@@ -4,6 +4,21 @@ use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::mutation_instructions;
+use crate::scenario::ScenarioExecution;
+
+pub fn connection_error(e: reqwest::Error) {
+    println!("Problem connecting to the service under test.\n {}", e);
+    print_error("Test failed.");
+}
+
+pub fn test_failed(error: crate::error::DisparityError) {
+    println!("{}", error.to_string());
+    print_error("Test failed.");
+}
+
+pub fn test_passed() {
+    print_success("Test passed.");
+}
 
 pub fn print_mutation_scenario(
     endpoint: &Endpoint,
@@ -19,11 +34,30 @@ pub fn print_mutation_scenario(
     print_scenario(format!("  Expects {}", mutation.expected));
 }
 
-pub fn print_success(message: impl Display) {
+pub fn run_summary(runable_executions: &Vec<ScenarioExecution>, start: std::time::Instant) {
+    let failed = runable_executions
+        .iter()
+        .filter(|&x| x.passed == false)
+        .count();
+
+    println!(
+        "{} scenarios executed in {:?}.\n {:?} passed, {:?} failed.",
+        runable_executions.len(),
+        start.elapsed(),
+        runable_executions.len() - failed,
+        failed,
+    );
+
+    if failed > 0 {
+        print_error("Some tests have failed.");
+    }
+}
+
+fn print_success(message: impl Display) {
     print_color(message, Color::Green);
 }
 
-pub fn print_error(error: impl Display) {
+fn print_error(error: impl Display) {
     print_color(error, Color::Red);
 }
 

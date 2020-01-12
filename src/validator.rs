@@ -1,9 +1,45 @@
+use http::StatusCode;
 use openapi_utils::ResponseExt;
-use reqwest::StatusCode;
 //use openapi_utils::SchemaExt;
 
 use crate::error;
+use crate::scenario::ScenarioExpectation;
 use crate::service;
+
+pub fn validate(
+    response: service::ServiceResponse,
+    expectation: ScenarioExpectation,
+) -> Result<(), error::DisparityError> {
+    if response.status != expectation.status_code {
+        return Err(error::status_error(
+            expectation.status_code,
+            response.status,
+        ));
+    }
+
+    match response.content_type {
+        None => {
+            return Err(error::DisparityError::ContentTypeIncorrect(String::from(
+                "empty content type",
+            )))
+        }
+        Some(content_type) => {
+            // Some servers respond adding the charset to application json which is incorrect
+            // but let's be lenient for now
+            if !(content_type.contains(&expectation.content_type)) {
+                return Err(error::DisparityError::ContentTypeIncorrect(content_type));
+            }
+        }
+    }
+
+    let response_body = response
+        .body
+        .map_err(|_| error::DisparityError::JsonError)?;
+
+    let schema_body = extract_schema(expectation.status_code, expectation.body)?;
+
+    validate_schema(&response_body, schema_body)
+}
 
 // pub fn is_middleware_code(&self) -> bool {
 //     let appplication_codes = vec!["401", "500"];
@@ -51,25 +87,6 @@ fn extract_schema<'a>(
             }
         }
     }
-}
-
-pub fn validate(
-    response: &service::ServiceResponse,
-    expected_status_code: StatusCode,
-    expected_body: Option<&openapiv3::Response>,
-) -> Result<(), error::DisparityError> {
-    if response.status != expected_status_code {
-        return Err(error::status_error(expected_status_code, response.status));
-    }
-
-    let response_body = response
-        .body
-        .as_ref()
-        .map_err(|_| error::DisparityError::JsonError)?;
-
-    let schema_body = extract_schema(expected_status_code, expected_body)?;
-
-    validate_schema(response_body, schema_body)
 }
 
 fn validate_schema(

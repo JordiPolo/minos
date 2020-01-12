@@ -46,6 +46,9 @@ pub enum DisparityError {
 
     #[error("The body of the response is incorrect.\n{0}")]
     BodySchemaIncorrect(ObjectError),
+
+    #[error("The content-type of the response is incorrect. Found {0}.")]
+    ContentTypeIncorrect(String),
 }
 
 pub fn status_error(expected: StatusCode, found: StatusCode) -> DisparityError {

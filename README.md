@@ -107,12 +107,12 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 ## General
 - Unknown Content-Type. Implemented
 - Unknown method. Implemented.
-- Check response content-type. Not Implemented.
+- Check response content-type. Implemented but limited to application/json.
 
 ## Any known operation
 - Check response body on all calls. Implemented
 - No params. Implemented
-- All required params. Not implemented
+- All required params. Implemented
 - Extra unknown params. Implemented
 - Valid optional params. Implemented
 - Invalid optional params. Implemented

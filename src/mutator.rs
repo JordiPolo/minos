@@ -189,7 +189,6 @@ impl ProperParamsBuilder {
         param: &openapiv3::Parameter,
         known_params: &KnownParamCollection,
     ) -> Option<RequestParam> {
-        //    println!("{:?}", param);
         let name = param.name();
         if known_params.param_known(&name) {
             return Some(RequestParam::new(&name, &known_params.param_value(&name)));

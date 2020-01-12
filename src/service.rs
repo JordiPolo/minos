@@ -9,9 +9,8 @@ use std::{
 
 use crate::cli_args::*;
 use crate::request_param::RequestParam;
-use reqwest::header::ACCEPT;
-use reqwest::header::CONTENT_TYPE;
-use reqwest::header::{HeaderMap, HeaderValue};
+use log::debug;
+use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Method;
 
 #[derive(Debug)]
@@ -109,6 +108,7 @@ pub struct Service {
 pub struct ServiceResponse {
     pub status: reqwest::StatusCode,
     pub body: serde_json::Result<serde_json::Value>,
+    pub content_type: Option<String>,
 }
 
 impl Drop for Service {
@@ -149,25 +149,30 @@ impl Service {
 
     pub fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
         let endpoint = request.url(&self.base_url, &self.base_path);
-        // println!("{:?}", endpoint);
-        // TODO: debugging mode
-        //   println!("{:?}", request.headers());
+        debug!("Sending to endpoint {:?}", endpoint);
+
+        debug!("Request headers {:?}", request.headers());
         let resp = self
             .client
             .request(request.method(), &endpoint)
             .headers(request.headers())
             .send()?;
 
-        let status = resp.status();
+        debug!("Response headers {:?}", resp.headers());
 
+        let status = resp.status();
+        let content_type = resp.headers().get(http::header::CONTENT_TYPE).map(|h| {
+            String::from(
+                h.to_str()
+                    .expect("Non ASCII characters found in your content-type header."),
+            )
+        });
         let body = resp.text()?;
-        // TODO: This should be ok on debug mode.
-        // for header in resp.headers() {
-        //     println!("response header {:?}", header);
-        // }
+
         Ok(ServiceResponse {
             status,
             body: serde_json::from_str(&body),
+            content_type,
         })
     }
 }
