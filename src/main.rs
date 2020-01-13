@@ -24,7 +24,7 @@ fn main() {
     let config = cli_args::config();
     let spec = spec::read(&config.filename).deref_all();
     let service = Service::new(&config, spec.servers[0].base_path());
-    let mutator = mutator::Mutator::new();
+    let mutator = mutator::Mutator::new(&config.conv_filename);
 
     // Create endpoints from the spec file.
     let endpoints = spec.paths.iter().flat_map(|(path_name, methods)| {

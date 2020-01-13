@@ -27,6 +27,14 @@ pub struct CLIArgs {
     pub base_url: String,
 
     #[structopt(
+        short = "c",
+        long = "conversions",
+        help = "The location of the conversions file with parameter values for this run.",
+        default_value = "./conversions.minos"
+    )]
+    pub conv_filename: String,
+
+    #[structopt(
         short = "s",
         long = "server",
         help = "Command to use to launch server",

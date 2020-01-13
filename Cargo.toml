@@ -36,6 +36,7 @@ valico = "3"
 log = "0.4"
 env_logger = "0.7"
 http = "*"
+shellexpand = "1.0"
 
 [profile.dev]
 debug=0

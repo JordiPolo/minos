@@ -1,16 +1,17 @@
 
-This is a CLI tool ~~copying~~ heavily inspired on [Dredd](https://github.com/apiaryio/dredd)
+Minos is a CLI tool heavily inspired on [Dredd](https://github.com/apiaryio/dredd)
 
-It generates requests based on the information in the OpenAPI file describing the service's API.
+It generates requests based on the information in the OpenAPI v3 file describing the service's API.
 It runs them against a live service and compares the responses.
-As opposed to Dredd, Minos not only validates correct responses, but executes edge cases and incorrect cases also. See the [Scenarios](#Scenarios) for details.
+In contrast to Dredd, Minos not only focuses on correct responses, it executes edge cases and incorrect cases also. See the [Scenarios](#Scenarios) for details.
 
-Minos is opinionated and expects the OpenAPI file and the service to follow best practices.
+Currently Minos is opinionated and expects the OpenAPI file and the service to follow best practices.
+PRs are welcomed to make it more generic.
 
 # Installation
 
 Download the [latest release](https://github.com/jordipolo/minos/releases/latest) for your system.
-Copy them in the directory of the project or in a directory on your PATH.
+Copy it to the directory of your project or somewhere in your PATH.
 These are static binaries, they have zero dependencies and can run in any system without additional software.
 
 # Usage
@@ -21,22 +22,25 @@ minos --run_server
 ```
 
 If the defaults do not work for you or are using some other technology, you can customize minos:
-- --url <base_url>         URL where the server is running [default: http://localhost:3000]
-- --file <filename>         Input OpenAPI file [default: doc/contracts/openapi.yaml]
+-  -u, --url <base-url>                 URL where the server is running (it can also be in localhost) [default:
+                                         http://localhost:3000]
+-  -c, --conversions <conv-filename>    The location of the conversions file with parameter values for this run.
+                                         [default: ./conversions.minos]
+-  -f, --file <filename>                Input OpenAPI file [default: doc/contracts/openapi.yaml]
 
-In CI, it is often useful for minos to start the application server.
-- -s <server_command>   Command to use to launch server [default: bundle exec rails server]
-- --run_server          Makes Minos starts and stops the server by issueing the server command and waiting the timeout
-- -t <server_wait>      Timeout allowed for the service to startup [default: 10]
+In CI, it is often useful for minos to start the application server by itself.
+-  -s, --server <server-command>           Command to use to launch server [default: bundle exec rails server]
+-  -t, --timeout <server-wait>             Timeout allowed for the service to startup [default: 10]
 
 
 ## Conversions file
-This step is optional. If no conversions file is found, Minos will still test all the endpoints without required parameters.
+This step is optional.
+If no conversions file is found, Minos will still test all the endpoints that do not have required parameters.
 
-Minos still can't discover UUIDs of resources for itself.
+Minos still can't discover IDs of resources for itself yet.
 It will call all the `index` routes which do not have required parameters.
 To call other routes which tipically require a parameter in the path, Minos allows you to create a conversions file.
-The file is named `conversions.minos` and lives in the same directory where Minos is executed.
+The default location for the file is `./conversions.minos` but this value can be overwriten with a parameter.
 The format of the file is simply:
 ```
 path,<piece to be converted>,<value>
@@ -89,10 +93,10 @@ In short, Minos is quite dumb and will just sustitute the strings, no questions 
 
 |                        | Minos | Dredd  |
 |------------------------|-------|--------|
-| Standalone binary      | Yes   | Needs NPM, V8 and dependencies |
+| Standalone binary      | Yes   | No. Needs NPM, V8 and dependencies |
 | Checks error responses | Yes   | No   |
 | Autogenerates scenarios| Yes   | No   |
-| OpenAPI support        | Yes   | Yes  |
+| OpenAPIv3 support      | Yes   | Yes  |
 | CI support             | Yes   | Yes  |
 | API Blueprint support  | No    | Yes  |
 | Hooks                  | No    | Yes  |
@@ -107,7 +111,7 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 ## General
 - Unknown Content-Type. Implemented
 - Unknown method. Implemented.
-- Check response content-type. Implemented but limited to application/json.
+- Check response content-type. Assumes application/json.
 
 ## Any known operation
 - Check response body on all calls. Implemented
@@ -121,23 +125,13 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 - Send parameters in their limits and outside their limits. Not implemented
 
 
-## Known operations
-- Index without required parameters
-- Show when conversions.minos contains conversions for the path's variables
-
-
-
 # TODO
-- Configuration file
 - Implement all scenarios
 - Support hooks
+- Support `nullable` keyword
 
 
 # Contributing
 PRs very welcome!
 There are no tests for now as things are in flux.
 Code is using the Rust edition 2018. Minimun version of the compiler 1.31
-
-
-
-

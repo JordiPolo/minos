@@ -14,9 +14,9 @@ pub struct Mutator {
 }
 
 impl Mutator {
-    pub fn new() -> Self {
+    pub fn new(conversions: &str) -> Self {
         Mutator {
-            known_params: KnownParamCollection::new(),
+            known_params: KnownParamCollection::new(conversions),
         }
     }
 
@@ -250,17 +250,17 @@ impl ProperParamsBuilder {
             openapiv3::VariantOrUnknownOrEmpty::Item(string_format) => match string_format {
                 openapiv3::StringFormat::Date => Some(RequestParam::new(
                     &name,
-                    &format!("{:?}", Utc.ymd(2018, 11, 28)),
+                    &format!("{:?}", Utc.ymd(2019, 11, 28)),
                 )),
                 openapiv3::StringFormat::DateTime => {
-                    let date_time = Utc.ymd(2018, 11, 28).and_hms(12, 0, 9);
+                    let date_time = Utc.ymd(2019, 11, 28).and_hms(12, 0, 9);
                     Some(RequestParam::new(&name, &format!("{:?}", date_time)))
                 }
                 _ => unimplemented!("String format not supported"),
             },
             openapiv3::VariantOrUnknownOrEmpty::Unknown(string) => {
                 if string == "uuid" {
-                    // We can't just do a random uuid, as these will almost certainly fail
+                    // We can't do a random uuid, as it will fail. None says we did not create a valid param
                     None
                 // let uuid = uuid::Uuid::new_v4();
                 // RequestParam::new(&name, &format!("{:?}", uuid))
@@ -273,7 +273,6 @@ impl ProperParamsBuilder {
             openapiv3::VariantOrUnknownOrEmpty::Empty => {
                 // TODO Better idea here
                 Some(RequestParam::new(&name, "PLAIN_STRING"))
-                //unimplemented!("No plain string support")
             }
         }
         // TODO: This where?

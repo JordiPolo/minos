@@ -28,9 +28,9 @@ pub struct KnownParamCollection {
 }
 
 impl KnownParamCollection {
-    pub fn new() -> Self {
+    pub fn new(conversions: &str) -> Self {
         KnownParamCollection {
-            params: KnownParamCollection::read_known_params(),
+            params: KnownParamCollection::read_known_params(conversions),
         }
     }
 
@@ -54,21 +54,25 @@ impl KnownParamCollection {
             .to_string()
     }
 
-    fn read_known_params() -> Vec<KnownParam> {
-        match KnownParamCollection::_read_known_params() {
-            Err(_) => vec![],
+    fn read_known_params(conversions: &str) -> Vec<KnownParam> {
+        match KnownParamCollection::_read_known_params(conversions) {
+            Err(_) => {
+                println!("Conversions file {} not found. Conversions will not be used", conversions);
+                vec![]
+            },
             Ok(d) => d,
         }
     }
-    fn _read_known_params() -> Result<Vec<KnownParam>, std::io::Error> {
-        let mut result = vec![];
-        let filedata = std::fs::read_to_string("conversions.minos")?;
-        for line in filedata.split('\n') {
+    fn _read_known_params(conversions: &str) -> Result<Vec<KnownParam>, std::io::Error> {
+        let filename = shellexpand::tilde(conversions).into_owned();
+        let filedata = std::fs::read_to_string(&filename)?;
+
+        Ok(filedata.split('\n').fold(vec![], |mut acc, line| {
             let parts: Vec<&str> = line.split(',').collect();
             if parts.len() == 3 {
-                result.push(KnownParam::new(&parts))
+                acc.push(KnownParam::new(&parts))
             }
-        }
-        Ok(result)
+            acc
+        }))
     }
 }
