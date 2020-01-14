@@ -3,15 +3,16 @@ use openapi_utils::ResponseExt;
 //use openapi_utils::SchemaExt;
 
 use crate::error;
+use crate::error::Disparity;
 use crate::scenario::ScenarioExpectation;
 use crate::service;
 
 pub fn validate(
     response: service::ServiceResponse,
     expectation: ScenarioExpectation,
-) -> Result<(), error::DisparityError> {
+) -> Result<(), Disparity> {
     if response.status != expectation.status_code {
-        return Err(error::status_error(
+        return Err(error::status_disparity(
             expectation.status_code,
             response.status,
         ));
@@ -19,22 +20,20 @@ pub fn validate(
 
     match response.content_type {
         None => {
-            return Err(error::DisparityError::ContentTypeIncorrect(String::from(
-                "empty content type",
+            return Err(Disparity::IncorrectContentType(String::from(
+                "Empty content type",
             )))
         }
         Some(content_type) => {
             // Some servers respond adding the charset to application json which is incorrect
             // but let's be lenient for now
             if !(content_type.contains(&expectation.content_type)) {
-                return Err(error::DisparityError::ContentTypeIncorrect(content_type));
+                return Err(Disparity::IncorrectContentType(content_type));
             }
         }
     }
 
-    let response_body = response
-        .body
-        .map_err(|_| error::DisparityError::JsonError)?;
+    let response_body = response.body.map_err(|_| Disparity::JsonError)?;
 
     let schema_body = extract_schema(expectation.status_code, expectation.body)?;
 
@@ -59,15 +58,13 @@ fn is_application_defined_code(expected: StatusCode) -> bool {
 fn extract_schema<'a>(
     expected_status_code: StatusCode,
     expected_body: Option<&'a openapiv3::Response>,
-) -> Result<Option<&'a openapiv3::Schema>, error::DisparityError> {
+) -> Result<Option<&'a openapiv3::Schema>, Disparity> {
     match expected_body {
         // Check if we even have the code specified in the contract
         None => {
             // If is something apps specify, it totally should be there and we error
             if is_application_defined_code(expected_status_code) {
-                Err(error::DisparityError::UndocumentedCode(
-                    expected_status_code,
-                ))
+                Err(Disparity::UndocumentedCode(expected_status_code))
             } else {
                 Ok(None) // If not, it is ok, we just do not provide body
             }
@@ -81,7 +78,7 @@ fn extract_schema<'a>(
                     // TODO: We are not erroying now, maybe this should be a CLI argument
                     if is_application_defined_code(expected_status_code) {
                         //Ok(None)
-                        Err(error::DisparityError::SchemaNotFound(expected_status_code))
+                        Err(Disparity::SchemaNotFound(expected_status_code))
                     } else {
                         Ok(None)
                     }
@@ -94,14 +91,14 @@ fn extract_schema<'a>(
 fn validate_schema(
     body: &serde_json::Value,
     schema: std::option::Option<&openapiv3::Schema>,
-) -> Result<(), error::DisparityError> {
+) -> Result<(), Disparity> {
     // Is ok the schema to be empty if there is data to check anyways
     // But if there is anything there we should be having a schema to match against!
     if schema.is_none() {
         if body == &serde_json::Value::Null {
             return Ok(());
         } else {
-            return Err(error::DisparityError::SchemaNotFoundForData(body.clone()));
+            return Err(Disparity::SchemaNotFoundForData(body.clone()));
         }
     }
 
@@ -119,7 +116,7 @@ fn validate_schema(
         Ok(())
     } else {
         // println!("Response body:\n {}", body);
-        return Err(error::body_schema_incorrect(&mut state.errors));
+        Err(crate::error::body_schema_incorrect(&mut state.errors))
     }
 }
 

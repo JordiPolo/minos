@@ -3,9 +3,8 @@ use crate::request_param::RequestParam;
 use chrono::prelude::*;
 use openapi_utils::{IntegerTypeExt, ParameterDataExt, ParameterExt};
 use openapiv3::Type;
-use std::ops::Range;
 use rand::seq::SliceRandom;
-
+use std::ops::Range;
 
 pub fn create_params(
     param: &openapiv3::Parameter,
@@ -21,7 +20,11 @@ pub fn create_params(
     match param.parameter_data().get_type() {
         Type::Boolean {} => boolean_request_param(&param),
         Type::Integer(_) => integer_request_param(&param),
-        Type::String(openapiv3::StringType { format, enumeration, .. }) => string_request_param(&param, &format, &enumeration),
+        Type::String(openapiv3::StringType {
+            format,
+            enumeration,
+            ..
+        }) => string_request_param(&param, &format, &enumeration),
         _ => Some(RequestParam::new(&name, "truething")),
     }
 }
@@ -49,14 +52,12 @@ fn integer_request_param(param: &openapiv3::Parameter) -> Option<RequestParam> {
     Some(RequestParam::new(&param.name(), &format!("{:?}", value)))
 }
 
-
 fn string_request_param(
     param: &openapiv3::Parameter,
     format: &openapiv3::VariantOrUnknownOrEmpty<openapiv3::StringFormat>,
     enumeration: &Vec<String>,
 ) -> Option<RequestParam> {
     let name = param.parameter_data().name.clone();
-
 
     if !enumeration.is_empty() {
         let mut rng = rand::thread_rng();
@@ -87,8 +88,7 @@ fn string_request_param(
             } else if string == "date-time" {
                 let date_time = Utc.ymd(2020, 1, 13).and_hms(12, 0, 9);
                 Some(RequestParam::new(&name, &format!("{:?}", date_time)))
-            }
-            else {
+            } else {
                 Some(RequestParam::new(&name, "PLAIN_STRING_UNKNOWN"))
                 // TODO plain string
                 // unimplemented!("No plain string support")

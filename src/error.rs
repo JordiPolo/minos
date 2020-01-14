@@ -26,16 +26,18 @@ impl fmt::Display for ObjectError {
 }
 
 #[derive(Error, Debug)]
-pub enum DisparityError {
+pub enum Disparity {
     #[error("Status code disparity. Expected {expected:?}, found {found:?}")]
     StatusDisparity {
         expected: StatusCode,
         found: StatusCode,
     },
-    #[error("The application responded with status code {0} but this code is not documented in the openapi file!")]
+    #[error("The application responded with status code `{0}` but this code is not documented in the openapi file!")]
     UndocumentedCode(StatusCode),
 
-    #[error("The application responded with status code {0} but this code has no schema for it!")]
+    #[error(
+        "The application responded with status code `{0}` but this code has no schema for it!"
+    )]
     SchemaNotFound(StatusCode),
 
     #[error("The application responded with malformed response. Can't parse as Json.")]
@@ -48,17 +50,17 @@ pub enum DisparityError {
     BodySchemaIncorrect(ObjectError),
 
     #[error("The content-type of the response is incorrect. Found {0}.")]
-    ContentTypeIncorrect(String),
+    IncorrectContentType(String),
 }
 
-pub fn status_error(expected: StatusCode, found: StatusCode) -> DisparityError {
-    DisparityError::StatusDisparity { expected, found }
+pub fn status_disparity(expected: StatusCode, found: StatusCode) -> Disparity {
+    Disparity::StatusDisparity { expected, found }
 }
 
-pub fn body_schema_incorrect(errors: &mut valico::ValicoErrors) -> DisparityError {
+pub fn body_schema_incorrect(errors: &mut valico::ValicoErrors) -> Disparity {
     // TODO: Add something like "...and 100 other errors" to the output
     errors.truncate(8); // For instance in big arrays we may have 100s of errors which is difficult to read
-    DisparityError::BodySchemaIncorrect(ObjectError(
+    Disparity::BodySchemaIncorrect(ObjectError(
         errors
             .iter()
             .map(|error| PropertyError {

@@ -3,6 +3,7 @@ use std::fmt::Display;
 use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
+use crate::error::Disparity;
 use crate::mutation::instructions::MutationInstruction;
 use crate::scenario::ScenarioExecution;
 
@@ -11,7 +12,7 @@ pub fn connection_error(e: reqwest::Error) {
     print_error("Test failed.");
 }
 
-pub fn test_failed(error: crate::error::DisparityError) {
+pub fn test_failed(error: Disparity) {
     println!("{}", error.to_string());
     print_error("Test failed.");
 }
@@ -20,10 +21,7 @@ pub fn test_passed() {
     print_success("Test passed.");
 }
 
-pub fn print_mutation_scenario(
-    endpoint: &Endpoint,
-    mutation: &MutationInstruction,
-) {
+pub fn print_mutation_scenario(endpoint: &Endpoint, mutation: &MutationInstruction) {
     print_scenario("Scenario:");
     print_scenario(format!(
         "{} {}",

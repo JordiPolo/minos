@@ -57,9 +57,12 @@ impl KnownParamCollection {
     fn read_known_params(conversions: &str) -> Vec<KnownParam> {
         match KnownParamCollection::_read_known_params(conversions) {
             Err(_) => {
-                println!("Conversions file {} not found. Conversions will not be used", conversions);
+                println!(
+                    "Conversions file {} not found. Conversions will not be used",
+                    conversions
+                );
                 vec![]
-            },
+            }
             Ok(d) => d,
         }
     }

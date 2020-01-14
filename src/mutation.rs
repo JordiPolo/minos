@@ -6,10 +6,9 @@ use crate::request_param::RequestParam;
 use crate::service::Request;
 use openapi_utils::{OperationExt, ParameterDataExt, ParameterExt, TypeExt};
 
-pub mod instructions;
 mod improper_params;
+pub mod instructions;
 mod proper_params;
-
 
 pub struct Mutator {
     known_params: KnownParamCollection,
@@ -61,9 +60,7 @@ impl Mutator {
             }
         } else {
             match instructions.path_params {
-                PathMutation::Proper => {
-                    Some(String::from(path))
-                }
+                PathMutation::Proper => Some(String::from(path)),
                 PathMutation::Random => {
                     None // We can't make random something that's is not there
                 }
@@ -106,7 +103,6 @@ impl Mutator {
         params: &Vec<&openapiv3::Parameter>,
         query_params: &ParamMutation,
     ) -> Option<Vec<RequestParam>> {
-
         match query_params {
             ParamMutation::None => Some(vec![]),
             ParamMutation::Static(the_param) => {
@@ -123,12 +119,11 @@ impl Mutator {
                 } else {
                     Some(improper_params)
                 }
-            },
-            ParamMutation::Empty => {
-                  let proper_params = self.get_proper_param(params)?;
-                  let result = proper_params.into_iter().map(|mut param| {param.value = "".to_string(); param }).collect();
-                  Some(result)
-              }
+            } // ParamMutation::Empty => {
+              //       let proper_params = self.get_proper_param(params)?;
+              //       let result = proper_params.into_iter().map(|mut param| {param.value = "".to_string(); param }).collect();
+              //       Some(result)
+              //   }
         }
     }
 

@@ -1,4 +1,6 @@
 //mod string_validator;
+#![deny(clippy::all)]
+
 mod cli_args;
 mod error;
 mod known_param;

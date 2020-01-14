@@ -9,7 +9,7 @@ use std::{
 
 use crate::cli_args::*;
 use crate::request_param::RequestParam;
-use log::{debug, info};
+use log::debug;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Method;
 
@@ -63,7 +63,7 @@ impl Request {
 
     pub fn headers(&self) -> HeaderMap {
         let mut request_headers = HeaderMap::new();
-        request_headers.insert("x-mws-authentication", HeaderValue::from_static("MWS 5ff4257e-9c16-11e0-b048-0026bbfffe5e:ThJT3EMI7yjhWQVoTEHYQb15/BIKcgTsCnXlBFKTEnezl9bJQhnNRynE+dskJfiWSanCQOAB9/1e+IHk1U1FjKGPe4y"));
+        request_headers.insert("Accept", HeaderValue::from_static("application/json"));
         if self.is_method_with_data() {
             request_headers.insert(
                 CONTENT_TYPE,
@@ -149,7 +149,7 @@ impl Service {
 
     pub fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
         let endpoint = request.url(&self.base_url, &self.base_path);
-        info!("Sending to endpoint {:?}", endpoint);
+        println!("Sending to endpoint {:?}", endpoint);
 
         debug!("Request headers {:?}", request.headers());
         let resp = self

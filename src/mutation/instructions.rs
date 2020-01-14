@@ -26,7 +26,7 @@ pub enum ParamMutation {
     Proper,
     Wrong,
     None,
-    Empty, //TODO: mutator can't do: for required should fail, for optional not
+    //    Empty, // Empty values for strings or 0 for numbers, but is this correct or incorrect scenario?
 }
 
 pub fn mutations() -> Vec<MutationInstruction> {
