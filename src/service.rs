@@ -9,7 +9,7 @@ use std::{
 
 use crate::cli_args::*;
 use crate::request_param::RequestParam;
-use log::debug;
+use log::{debug, info};
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Method;
 
@@ -149,7 +149,7 @@ impl Service {
 
     pub fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
         let endpoint = request.url(&self.base_url, &self.base_path);
-        debug!("Sending to endpoint {:?}", endpoint);
+        info!("Sending to endpoint {:?}", endpoint);
 
         debug!("Request headers {:?}", request.headers());
         let resp = self

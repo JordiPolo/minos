@@ -1,4 +1,4 @@
-use crate::mutation_instructions::MutationInstruction;
+use crate::mutation::instructions::MutationInstruction;
 use crate::operation;
 use crate::service::Request;
 use openapi_utils::OperationExt;

@@ -2,8 +2,7 @@
 mod cli_args;
 mod error;
 mod known_param;
-mod mutation_instructions;
-mod mutator;
+mod mutation;
 mod operation;
 mod reporter;
 mod request_param;
@@ -24,7 +23,7 @@ fn main() {
     let config = cli_args::config();
     let spec = spec::read(&config.filename).deref_all();
     let service = Service::new(&config, spec.servers[0].base_path());
-    let mutator = mutator::Mutator::new(&config.conv_filename);
+    let mutator = mutation::Mutator::new(&config.conv_filename);
 
     // Create endpoints from the spec file.
     let endpoints = spec.paths.iter().flat_map(|(path_name, methods)| {
@@ -33,7 +32,7 @@ fn main() {
 
     // Scenarios from the endpoints
     let scenarios = endpoints.fold(Vec::new(), |mut acc, endpoint| {
-        for instruction in mutation_instructions::mutations() {
+        for instruction in mutation::instructions::mutations() {
             acc.push(Scenario::new(endpoint.clone(), instruction));
         }
         acc

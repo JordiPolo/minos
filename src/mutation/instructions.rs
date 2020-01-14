@@ -26,7 +26,7 @@ pub enum ParamMutation {
     Proper,
     Wrong,
     None,
-    //    Empty, what would happen in this case?
+    Empty, //TODO: mutator can't do: for required should fail, for optional not
 }
 
 pub fn mutations() -> Vec<MutationInstruction> {

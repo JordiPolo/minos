@@ -78,7 +78,9 @@ fn extract_schema<'a>(
                 Some(body) => Ok(Some(body)),
                 None => {
                     // TODO: Maybe we should not fail if for instance error codes do not have a schema
+                    // TODO: We are not erroying now, maybe this should be a CLI argument
                     if is_application_defined_code(expected_status_code) {
+                        //Ok(None)
                         Err(error::DisparityError::SchemaNotFound(expected_status_code))
                     } else {
                         Ok(None)
