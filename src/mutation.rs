@@ -49,13 +49,14 @@ impl Mutator {
 
     fn make_path(&self, path: &str, instructions: &MutationInstruction) -> Option<String> {
         if path.contains('}') {
-            let conversion = self.known_params.find_by_path(path)?;
             match instructions.path_params {
                 PathMutation::Proper => {
+                    let conversion = self.known_params.find_by_path(path)?;
                     Some(str::replace(path, &conversion.pattern, &conversion.value))
                 }
                 PathMutation::Random => {
-                    Some(str::replace(path, &conversion.pattern, "wrongPathItemHere"))
+                    let re = regex::Regex::new(r"\{.*?\}").unwrap();
+                    Some(re.replace_all(path, "wrongPathItemHere").to_string())
                 }
             }
         } else {
@@ -75,7 +76,7 @@ impl Mutator {
     ) -> Option<Vec<RequestParam>> {
         // TODO: A hack to special case this but this would otherwise produce a mutation which will not fail
         // even when the instructions say it would
-        if endpoint.method.required_parameters().is_empty()
+        if !endpoint.method.required_parameters().iter().any(|p| p.location_string() == "query")
             && instructions.required_params == crate::mutation::instructions::ParamMutation::None
         {
             return None;

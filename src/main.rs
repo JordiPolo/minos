@@ -41,7 +41,7 @@ fn main() {
     });
 
     // Runable executions for the scenarios
-    let (mut runable_executions, _not_runable): (Vec<ScenarioExecution>, Vec<ScenarioExecution>) =
+    let (mut runable_executions, not_runable): (Vec<ScenarioExecution>, Vec<ScenarioExecution>) =
         scenarios
             .into_iter()
             .map(|scenario| {
@@ -80,5 +80,10 @@ fn main() {
         println!();
     }
 
+    // for r in not_runable {
+    //     info!("{:?} ---> {:?}", r.scenario.endpoint.path_name, r.scenario.instructions);
+    // }
+
     reporter::run_summary(&runable_executions, start);
+    reporter::advise_about_conversions_file(&not_runable);
 }

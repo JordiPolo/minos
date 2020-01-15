@@ -4,6 +4,7 @@ use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::error::Disparity;
+use crate::mutation::instructions;
 use crate::mutation::instructions::MutationInstruction;
 use crate::scenario::ScenarioExecution;
 
@@ -30,6 +31,26 @@ pub fn print_mutation_scenario(endpoint: &Endpoint, mutation: &MutationInstructi
     ));
     print_scenario(format!("  {}", mutation.explanation));
     print_scenario(format!("  Expects {}", mutation.expected));
+}
+
+
+pub fn advise_about_conversions_file(not_runable: &Vec<ScenarioExecution>) {
+    let mut convertible: Vec<String> = not_runable.iter().filter_map(|execution|
+        if execution.scenario.instructions.path_params == instructions::PathMutation::Proper &&
+        execution.scenario.instructions.required_params == instructions::ParamMutation::Proper &&
+        execution.scenario.instructions.query_params == instructions::ParamMutation::Proper
+         {
+            Some(execution.scenario.endpoint.path_name.clone())
+        } else { None }
+    ).collect();
+    convertible.dedup();
+
+    if !convertible.is_empty() {
+        println!();
+        println!("Hint: Include known path IDs to the conversions file to increase the coverage of Minos for the following paths:");
+        convertible.iter().for_each(|path| println!("{:?}", path));
+    }
+
 }
 
 pub fn run_summary(runable_executions: &Vec<ScenarioExecution>, start: std::time::Instant) {
