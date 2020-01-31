@@ -1,15 +1,15 @@
 use http::StatusCode;
-use openapi_utils::ResponseExt;
+use openapi_utils::{ReferenceOrExt, ResponseExt};
 //use openapi_utils::SchemaExt;
 
 use crate::error;
 use crate::error::Disparity;
-use crate::scenario::ScenarioExpectation;
+//use crate::scenario::ScenarioExpectation;
 use crate::service;
 
 pub fn validate(
     response: service::ServiceResponse,
-    expectation: ScenarioExpectation,
+    expectation: crate::scenario::ScenarioExpectation,
 ) -> Result<(), Disparity> {
     if response.status != expectation.status_code {
         return Err(error::status_disparity(
@@ -55,10 +55,10 @@ fn is_application_defined_code(expected: StatusCode) -> bool {
         .any(|&code| code == expected.as_str())
 }
 
-fn extract_schema<'a>(
+fn extract_schema(
     expected_status_code: StatusCode,
-    expected_body: Option<&'a openapiv3::Response>,
-) -> Result<Option<&'a openapiv3::Schema>, Disparity> {
+    expected_body: Option<&openapiv3::Response>,
+) -> Result<Option<&openapiv3::Schema>, Disparity> {
     match expected_body {
         // Check if we even have the code specified in the contract
         None => {
@@ -103,7 +103,6 @@ fn validate_schema(
     }
 
     // TODO: Also would be good to check the string format. Reuse the StringValidator
-
     let json_v4_schema = openapi_schema_to_json_schema(schema.unwrap());
 
     let mut scope = valico::json_schema::Scope::new();
@@ -120,13 +119,63 @@ fn validate_schema(
     }
 }
 
+// TODO: It seems if the examples have keywords like "type" things will blow up, remove examples content
 // TODO: Do all the proper conversions here with all the differences between formats.
 // Most notably   nullable: true  -> [type, null]
 // See https://github.com/mikunn/openapi-schema-to-json-schema
 fn openapi_schema_to_json_schema(schema_data: &openapiv3::Schema) -> serde_json::Value {
-    let serialized = serde_json::to_string(&schema_data).expect("Improper serialization of schema");
+    let mut the_schema = schema_data.clone();
+    remove_examples(&mut the_schema);
+
+    let serialized = serde_json::to_string(&the_schema).expect("Improper serialization of schema");
 
     let json_v4_schema: serde_json::Value =
         serde_json::from_str(&serialized).expect("Improper deser of schema");
     json_v4_schema
+}
+
+// It seems Valico does not like having keywords like "type" in json examples.
+// Hacking around by just removing the examples, they are not needed anyways for validation
+fn remove_examples(schema: &mut openapiv3::Schema) {
+    match &mut schema.schema_kind {
+        openapiv3::SchemaKind::Type(the_type) => match the_type {
+            openapiv3::Type::Array(array) => {
+                remove_examples(&mut array.items.to_item_mut());
+                schema.schema_data.example = None;
+            }
+            openapiv3::Type::Object(object) => {
+                for (_name, property) in &mut object.properties {
+                    remove_examples(&mut property.to_item_mut());
+                }
+                schema.schema_data.example = None;
+            }
+            _ => {
+                schema.schema_data.example = None;
+            }
+        },
+        openapiv3::SchemaKind::OneOf { ref mut one_of } => {
+            for sch in &mut one_of.iter_mut() {
+                remove_examples(sch.to_item_mut())
+            }
+        }
+        openapiv3::SchemaKind::AnyOf { ref mut any_of } => {
+            for sch in &mut any_of.iter_mut() {
+                remove_examples(sch.to_item_mut())
+            }
+        }
+        openapiv3::SchemaKind::AllOf { ref mut all_of } => {
+            for sch in &mut all_of.iter_mut() {
+                remove_examples(sch.to_item_mut())
+            }
+        }
+        openapiv3::SchemaKind::Any(schema) => {
+            for (_name, property) in &mut schema.properties {
+                remove_examples(property.to_item_mut())
+            }
+            if schema.items.is_some() {
+                let the_items = schema.items.as_mut().unwrap();
+                remove_examples(the_items.to_item_mut())
+            }
+        }
+    }
 }
