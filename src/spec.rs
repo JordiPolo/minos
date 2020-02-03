@@ -15,8 +15,6 @@ pub fn read(filename: &str) -> openapiv3::OpenAPI {
                 filename
             );
             std::process::exit(-1);
-
         }
     }
-
 }

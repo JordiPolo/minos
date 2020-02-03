@@ -52,8 +52,10 @@ pub fn print_mutation_scenario(scenario: &Scenario) {
         ),
         Color::Blue,
     );
-    printer.print_color(&format!("TraceId: {:?}", scenario.request.headers()["X-B3-TraceID"]), BORING_GRAY);
-
+    printer.print_color(
+        &format!("TraceId: {:?}", scenario.request.headers()["X-B3-TraceID"]),
+        BORING_GRAY,
+    );
 }
 
 use itertools::Itertools;

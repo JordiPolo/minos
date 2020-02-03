@@ -10,9 +10,9 @@ use std::{
 use crate::cli_args::*;
 use crate::request_param::RequestParam;
 use log::{debug, info};
+use rand::Rng;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Method;
-use rand::Rng;
 
 #[derive(Debug)]
 pub struct Request {

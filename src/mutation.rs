@@ -177,10 +177,6 @@ impl Mutator {
         query_params.to_vec().append(&mut first_nq);
         non_query_params.to_vec().append(&mut first_query_params);
 
-        for qp in &query_params {
-            print!("{}*", qp.len());
-        }
-
         let mut all_things: Vec<Vec<&Mutation>> = non_query_params
             .into_iter()
             .multi_cartesian_product()
