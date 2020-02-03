@@ -11,11 +11,11 @@ use openapi_utils::{OperationExt, ParameterExt, ReferenceOrExt};
 use std::cmp::Ordering;
 
 mod bool_type;
-mod params;
 pub mod instructions;
-pub mod param_mutation;
-mod string_type;
 mod integer_type;
+pub mod param_mutation;
+mod params;
+mod string_type;
 
 // Data integrity SLO
 // secuence diagrams
@@ -105,8 +105,9 @@ impl Mutator {
 
     pub fn mutate(&self, endpoint: &Endpoint) -> Vec<Scenario> {
         let mutations = self.mutations_from_mutagen(&endpoint, instructions::mutagens());
-        let query_mutations = self.mutations_from_mutagen_query(&endpoint, instructions::schema_mutagens());
-//        let body_mutations = self.mutations_from_mutagen_body(&endpoint, instructions::schema_mutagens());
+        let query_mutations =
+            self.mutations_from_mutagen_query(&endpoint, instructions::schema_mutagens());
+        //        let body_mutations = self.mutations_from_mutagen_body(&endpoint, instructions::schema_mutagens());
         self.scenarios_from_mutations(&endpoint, &mutations, &query_mutations)
     }
 
@@ -123,22 +124,34 @@ impl Mutator {
         debug!("QM size {:?}", query_mutations.len());
         // TODO: CLI param to do or not do crazy amount of combinations.
         //Group by request part or parameter so later can do combinations
-        for (_key, group) in &query_mutations.iter()
-        .sorted_by(|a, b| Ord::cmp(&a.param_value.as_ref().unwrap().name, &b.param_value.as_ref().unwrap().name))
-        .group_by(|elt| &elt.param_value.as_ref().unwrap().name) {
+        for (_key, group) in &query_mutations
+            .iter()
+            .sorted_by(|a, b| {
+                Ord::cmp(
+                    &a.param_value.as_ref().unwrap().name,
+                    &b.param_value.as_ref().unwrap().name,
+                )
+            })
+            .group_by(|elt| &elt.param_value.as_ref().unwrap().name)
+        {
             query_params.push(group.collect());
         }
 
-        for (_key, group) in &mutations.iter()
-        .sorted_by(|a, b| Ord::cmp(&a.mutagen.request_part, &b.mutagen.request_part))
-        .group_by(|elt| &elt.mutagen.request_part) {
+        for (_key, group) in &mutations
+            .iter()
+            .sorted_by(|a, b| Ord::cmp(&a.mutagen.request_part, &b.mutagen.request_part))
+            .group_by(|elt| &elt.mutagen.request_part)
+        {
             non_query_params.push(group.collect());
         }
 
         // TODO: Deal with the explosion in a more elegant way.
         // TODO: Report better when an endpoint is not being mutated
         if query_params.iter().map(|a| a.len()).product::<usize>() > 1000 {
-            println!("Too many mutations for this endpoint {}.", endpoint.path_name);
+            println!(
+                "Too many mutations for this endpoint {}.",
+                endpoint.path_name
+            );
             return scenarios;
         }
 
@@ -173,7 +186,7 @@ impl Mutator {
             .multi_cartesian_product()
             .collect();
 
-         debug!("number  of all nonquery param {:?}", all_things.len());
+        debug!("number  of all nonquery param {:?}", all_things.len());
 
         let mut combination2: Vec<Vec<&Mutation>> =
             query_params.into_iter().multi_cartesian_product().collect();
@@ -311,7 +324,7 @@ impl Mutator {
                         }
                     }
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
         mutations
@@ -322,7 +335,6 @@ impl Mutator {
         endpoint: &Endpoint,
         instructions: Vec<MutagenInstruction>,
     ) -> Vec<Mutation> {
-
         let mut mutations = vec![];
 
         for instruction in instructions {
@@ -347,7 +359,7 @@ impl Mutator {
                         mutations.push(Mutation::new(instruction, path));
                     }
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
         }
         mutations
@@ -374,5 +386,4 @@ impl Mutator {
             _ => unimplemented!("This path mutagen is not implemented!"),
         }
     }
-
 }

@@ -38,7 +38,7 @@ fn main() {
     let scenarios = endpoints.flat_map(|e| mutator.mutate(&e));
 
     for scenario in scenarios {
-      //  println!("{:?}", scenario.instructions);
+        //  println!("{:?}", scenario.instructions);
         reporter::print_mutation_scenario(&scenario.endpoint, &scenario.instructions);
         let path = scenario.endpoint.path_name.clone();
         if config.dry_run {
@@ -52,19 +52,19 @@ fn main() {
         match response {
             Err(e) => {
                 reporter::connection_error(e);
-                results.push((path,false));
+                results.push((path, false));
             }
             Ok(real_response) => {
                 match validator::validate(real_response, scenario.expectation()) {
                     Err(error) => {
                         debug!("{:?}", scenario.endpoint);
                         reporter::test_failed(error);
-                        results.push((path,false));
+                        results.push((path, false));
                     }
                     Ok(_) => {
                         // variation.passed = true;
                         reporter::test_passed();
-                        results.push((path,true));
+                        results.push((path, true));
                     }
                 }
             }

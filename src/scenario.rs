@@ -54,7 +54,6 @@ impl Scenario {
     }
 }
 
-
 // impl From<Vec<Mutation>> for Request {
 //     fn from(mutations: Vec<Mutation>) -> Self {
 //         let mut request = Request::new();

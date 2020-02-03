@@ -9,7 +9,6 @@ const LIGHT_BLUE: Color = Color::Rgb(150, 150, 255);
 
 use comfy_table::Table;
 
-
 pub fn connection_error(e: reqwest::Error) {
     println!("Problem connecting to the service under test.\n {}", e);
     print_error("Test failed.");
@@ -62,17 +61,16 @@ pub fn run_summary(results: &Vec<(String, bool)>, start: std::time::Instant) {
     table.set_header(vec!["Path", "Scenarios run", "Scenarios passed"]);
 
     for (path, results) in &by_path {
-       // let total = &results.into_iter().len();
-        let (pfailed, ppassed): (Vec<&(String, bool)>, Vec<&(String, bool)>) = results.partition(|&x| x.1 == false);
+        // let total = &results.into_iter().len();
+        let (pfailed, ppassed): (Vec<&(String, bool)>, Vec<&(String, bool)>) =
+            results.partition(|&x| x.1 == false);
         let the_size = pfailed.len() + ppassed.len();
 
-        table.add_row(
-            vec![
-                path,
-                &the_size.to_string(),
-                &pfailed.len().to_string(),
-            ]
-        );
+        table.add_row(vec![
+            path,
+            &the_size.to_string(),
+            &pfailed.len().to_string(),
+        ]);
     }
 
     println!("{}", table);
