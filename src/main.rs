@@ -39,7 +39,7 @@ fn main() {
 
     for scenario in scenarios {
         //  println!("{:?}", scenario.instructions);
-        reporter::print_mutation_scenario(&scenario.endpoint, &scenario.instructions);
+        reporter::print_mutation_scenario(&scenario);
         let path = scenario.endpoint.path_name.clone();
         if config.dry_run {
             println!("Dry run mode. No request executed.\n");

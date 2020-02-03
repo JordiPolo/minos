@@ -1,11 +1,22 @@
 use log::debug;
 use serde_yaml;
-use std::path::Path;
 
-pub fn read<P: AsRef<Path>>(filename: P) -> openapiv3::OpenAPI {
-    let data = std::fs::read_to_string(filename).expect("OpenAPI file could not be read.");
-    let spec =
-        serde_yaml::from_str(&data).expect("Could not deserialize file as OpenAPI v3.0 yaml");
-    debug!("The openapi after parsed {:?}", spec);
-    spec
+pub fn read(filename: &str) -> openapiv3::OpenAPI {
+    match std::fs::read_to_string(filename) {
+        Ok(data) => {
+            let spec = serde_yaml::from_str(&data)
+                .expect("Could not deserialize file as OpenAPI v3.0 yaml");
+            debug!("The openapi after parsed {:?}", spec);
+            spec
+        }
+        Err(_) => {
+            println!(
+                "The openapi file in {} was not found. Please pass the option -f=<filename> with a valid filename.",
+                filename
+            );
+            std::process::exit(-1);
+
+        }
+    }
+
 }

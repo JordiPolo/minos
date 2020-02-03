@@ -12,6 +12,7 @@ use crate::request_param::RequestParam;
 use log::{debug, info};
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Method;
+use rand::Rng;
 
 #[derive(Debug)]
 pub struct Request {
@@ -63,7 +64,15 @@ impl Request {
 
     pub fn headers(&self) -> HeaderMap {
         let mut request_headers = HeaderMap::new();
+        let mut rng = rand::thread_rng();
+        let trace_id = rng.gen::<u128>().to_string();
+        let span_id = rng.gen::<u64>().to_string();
+
         request_headers.insert("Accept", HeaderValue::from_static("application/json"));
+        request_headers.insert("X-B3-Sampled", HeaderValue::from_static("0"));
+        request_headers.insert("X-B3-TraceId", HeaderValue::from_str(&trace_id).unwrap());
+        request_headers.insert("X-B3-SpanId", HeaderValue::from_str(&span_id).unwrap());
+
         if self.is_method_with_data() {
             request_headers.insert(
                 CONTENT_TYPE,

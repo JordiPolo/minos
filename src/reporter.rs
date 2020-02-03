@@ -3,9 +3,10 @@ use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::error::Disparity;
-use crate::operation::Endpoint;
+use crate::scenario::Scenario;
 
 const LIGHT_BLUE: Color = Color::Rgb(150, 150, 255);
+const BORING_GRAY: Color = Color::Rgb(119, 119, 119);
 
 use comfy_table::Table;
 
@@ -23,8 +24,10 @@ pub fn test_passed() {
     print_success("Test passed.");
 }
 
-pub fn print_mutation_scenario(endpoint: &Endpoint, mutations: &[crate::mutation::Mutation]) {
+pub fn print_mutation_scenario(scenario: &Scenario) {
     let mut printer = Printer::new();
+    let endpoint = &scenario.endpoint;
+    let mutations = &scenario.instructions;
 
     printer.print_scenario("Scenario:");
     printer.print_scenario(format!(
@@ -49,6 +52,8 @@ pub fn print_mutation_scenario(endpoint: &Endpoint, mutations: &[crate::mutation
         ),
         Color::Blue,
     );
+    printer.print_color(&format!("TraceId: {:?}", scenario.request.headers()["X-B3-TraceID"]), BORING_GRAY);
+
 }
 
 use itertools::Itertools;
