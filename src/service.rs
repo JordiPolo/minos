@@ -9,7 +9,7 @@ use std::{
 
 use crate::cli_args::*;
 use crate::request_param::RequestParam;
-use log::debug;
+use log::{debug, info};
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Method;
 
@@ -79,7 +79,13 @@ impl Request {
         if !self.query_params.is_empty() {
             param_string = "?".to_string();
             for query_param in self.query_params.iter() {
-                param_string.push_str(&format!("{}={}&", query_param.name, query_param.value));
+                if query_param.value.is_some() {
+                    param_string.push_str(&format!(
+                        "{}={}&",
+                        query_param.name,
+                        query_param.value.as_ref().unwrap()
+                    ));
+                }
             }
             let len = param_string.len();
             param_string.truncate(len - 1);
@@ -113,10 +119,11 @@ pub struct ServiceResponse {
 
 impl Drop for Service {
     fn drop(&mut self) {
-        self.server.as_mut().map(|s| {
-            s.kill()
-                .expect("Service could not be killed, maybe it was not running (crashed?)")
-        });
+        if let Some(server) = self.server.as_mut() {
+            server
+                .kill()
+                .expect("Service could not be killed, maybe it was not running (crashed?)");
+        }
     }
 }
 
@@ -149,7 +156,7 @@ impl Service {
 
     pub fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
         let endpoint = request.url(&self.base_url, &self.base_path);
-        println!("Sending to endpoint {:?}", endpoint);
+        info!("Sending request {:?}", request);
 
         debug!("Request headers {:?}", request.headers());
         let resp = self

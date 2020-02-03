@@ -1,5 +1,6 @@
 //mod string_validator;
-#![deny(clippy::all)]
+//#![deny(clippy::all)]
+#![forbid(unsafe_code)]
 
 mod cli_args;
 mod error;
@@ -13,12 +14,11 @@ mod service;
 mod spec;
 mod validator;
 
-use crate::service::Service;
 use log::debug;
 use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
-use scenario::{Scenario, ScenarioExecution};
 use std::time::Instant;
 
+use crate::service::Service;
 fn main() {
     env_logger::init();
 
@@ -32,47 +32,39 @@ fn main() {
         operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
     });
 
-    // Scenarios from the endpoints
-    let scenarios = endpoints.fold(Vec::new(), |mut acc, endpoint| {
-        for instruction in mutation::instructions::mutations() {
-            acc.push(Scenario::new(endpoint.clone(), instruction));
-        }
-        acc
-    });
-
-    // Runable executions for the scenarios
-    let (mut runable_executions, not_runable): (Vec<ScenarioExecution>, Vec<ScenarioExecution>) =
-        scenarios
-            .into_iter()
-            .map(|scenario| {
-                let request = mutator.request(&scenario.endpoint, &scenario.instructions);
-                ScenarioExecution::new(scenario, request)
-            })
-            .partition(|s| s.request.is_some());
+    let mut results = Vec::new();
 
     let start = Instant::now();
-    // Run each scenario execution, get the response and validate it
-    for execution in &mut runable_executions {
-        reporter::print_mutation_scenario(
-            &execution.scenario.endpoint,
-            &execution.scenario.instructions,
-        );
+    let scenarios = endpoints.flat_map(|e| mutator.mutate(&e));
 
-        let response = service.send(&execution.request.as_ref().unwrap());
+    for scenario in scenarios {
+      //  println!("{:?}", scenario.instructions);
+        reporter::print_mutation_scenario(&scenario.endpoint, &scenario.instructions);
+        let path = scenario.endpoint.path_name.clone();
+        if config.dry_run {
+            println!("Dry run mode. No request executed.\n");
+            results.push((path, true));
+            continue;
+        }
+
+        let response = service.send(&scenario.request);
 
         match response {
             Err(e) => {
                 reporter::connection_error(e);
+                results.push((path,false));
             }
             Ok(real_response) => {
-                match validator::validate(real_response, execution.scenario.expectation()) {
+                match validator::validate(real_response, scenario.expectation()) {
                     Err(error) => {
-                        debug!("{:?}", execution.scenario.endpoint);
+                        debug!("{:?}", scenario.endpoint);
                         reporter::test_failed(error);
+                        results.push((path,false));
                     }
                     Ok(_) => {
-                        execution.passed = true;
+                        // variation.passed = true;
                         reporter::test_passed();
+                        results.push((path,true));
                     }
                 }
             }
@@ -80,10 +72,5 @@ fn main() {
         println!();
     }
 
-    // for r in not_runable {
-    //     info!("{:?} ---> {:?}", r.scenario.endpoint.path_name, r.scenario.instructions);
-    // }
-
-    reporter::run_summary(&runable_executions, start);
-    reporter::advise_about_conversions_file(&not_runable);
+    reporter::run_summary(&results, start);
 }

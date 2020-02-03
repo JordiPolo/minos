@@ -1,12 +1,14 @@
-use crate::operation::Endpoint;
 use std::fmt::Display;
 use std::io::Write;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use crate::error::Disparity;
-use crate::mutation::instructions;
-use crate::mutation::instructions::MutationInstruction;
-use crate::scenario::ScenarioExecution;
+use crate::operation::Endpoint;
+
+const LIGHT_BLUE: Color = Color::Rgb(150, 150, 255);
+
+use comfy_table::Table;
+
 
 pub fn connection_error(e: reqwest::Error) {
     println!("Problem connecting to the service under test.\n {}", e);
@@ -22,73 +24,102 @@ pub fn test_passed() {
     print_success("Test passed.");
 }
 
-pub fn print_mutation_scenario(endpoint: &Endpoint, mutation: &MutationInstruction) {
-    print_scenario("Scenario:");
-    print_scenario(format!(
+pub fn print_mutation_scenario(endpoint: &Endpoint, mutations: &[crate::mutation::Mutation]) {
+    let mut printer = Printer::new();
+
+    printer.print_scenario("Scenario:");
+    printer.print_scenario(format!(
         "{} {}",
         endpoint.crud.to_method_name(),
         endpoint.path_name
     ));
-    print_scenario(format!("  {}", mutation.explanation));
-    print_scenario(format!("  Expects {}", mutation.expected));
+    let mut sorted_mutations = mutations.to_owned();
+    sorted_mutations.sort(); //_by(|a, b| a.mutagen.expected.cmp(&b.mutagen.expected));
+    for mutation in &sorted_mutations {
+        let color = if mutation.mutagen.expected == http::StatusCode::OK {
+            LIGHT_BLUE
+        } else {
+            Color::Blue
+        };
+        printer.print_color(format!("  {}", mutation), color);
+    }
+    printer.print_color(
+        format!(
+            "  Expects {}",
+            sorted_mutations.pop().unwrap().mutagen.expected
+        ),
+        Color::Blue,
+    );
 }
 
+use itertools::Itertools;
 
-pub fn advise_about_conversions_file(not_runable: &Vec<ScenarioExecution>) {
-    let mut convertible: Vec<String> = not_runable.iter().filter_map(|execution|
-        if execution.scenario.instructions.path_params == instructions::PathMutation::Proper &&
-        execution.scenario.instructions.required_params == instructions::ParamMutation::Proper &&
-        execution.scenario.instructions.query_params == instructions::ParamMutation::Proper
-         {
-            Some(execution.scenario.endpoint.path_name.clone())
-        } else { None }
-    ).collect();
-    convertible.dedup();
+pub fn run_summary(results: &Vec<(String, bool)>, start: std::time::Instant) {
+    let failed = results.iter().filter(|&x| x.1 == false).count();
+    let by_path = results.iter().group_by(|x| &x.0);
 
-    if !convertible.is_empty() {
-        println!();
-        println!("Hint: Include known path IDs to the conversions file to increase the coverage of Minos for the following paths:");
-        convertible.iter().for_each(|path| println!("{:?}", path));
+    let mut table = Table::new();
+    table.set_header(vec!["Path", "Scenarios run", "Scenarios passed"]);
+
+    for (path, results) in &by_path {
+       // let total = &results.into_iter().len();
+        let (pfailed, ppassed): (Vec<&(String, bool)>, Vec<&(String, bool)>) = results.partition(|&x| x.1 == false);
+        let the_size = pfailed.len() + ppassed.len();
+
+        table.add_row(
+            vec![
+                path,
+                &the_size.to_string(),
+                &pfailed.len().to_string(),
+            ]
+        );
     }
 
-}
-
-pub fn run_summary(runable_executions: &Vec<ScenarioExecution>, start: std::time::Instant) {
-    let failed = runable_executions
-        .iter()
-        .filter(|&x| x.passed == false)
-        .count();
+    println!("{}", table);
 
     println!(
         "{} scenarios executed in {:?}.\n {:?} passed, {:?} failed.",
-        runable_executions.len(),
+        results.len(),
         start.elapsed(),
-        runable_executions.len() - failed,
+        results.len() - failed,
         failed,
     );
 
     if failed > 0 {
         print_error("Some tests have failed.");
+    } else {
+        print_success("All test passed!");
     }
 }
 
 fn print_success(message: impl Display) {
-    print_color(message, Color::Green);
+    Printer::new().print_color(message, Color::Green);
 }
 
 fn print_error(error: impl Display) {
-    print_color(error, Color::Red);
+    Printer::new().print_color(error, Color::Red);
 }
 
-fn print_scenario(message: impl Display) {
-    print_color(message, Color::Blue);
+struct Printer {
+    output: StandardStream,
 }
 
-fn print_color(error: impl Display, color: Color) {
-    let mut output = StandardStream::stdout(ColorChoice::Auto);
-    output
-        .set_color(ColorSpec::new().set_fg(Some(color)).set_bold(true))
-        .unwrap();
-    writeln!(output, "{}", error).unwrap();
-    output.reset().unwrap();
+impl Printer {
+    fn new() -> Self {
+        let output = StandardStream::stdout(ColorChoice::Auto);
+        output.lock();
+        Printer { output }
+    }
+
+    fn print_scenario(&mut self, message: impl Display) {
+        self.print_color(message, Color::Blue);
+    }
+
+    fn print_color(&mut self, error: impl Display, color: Color) {
+        self.output
+            .set_color(ColorSpec::new().set_fg(Some(color)).set_bold(true))
+            .unwrap();
+        writeln!(self.output, "{}", error).unwrap();
+        self.output.reset().unwrap();
+    }
 }

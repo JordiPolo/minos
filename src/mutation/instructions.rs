@@ -1,115 +1,199 @@
-use crate::operation::CRUD;
 use crate::request_param::RequestParam;
 use reqwest::StatusCode;
 
-#[derive(Debug)]
-pub struct MutationInstruction {
-    pub content_type: Option<String>,
-    pub method: Option<String>,
-    pub crud_operation: Option<CRUD>,
-    pub path_params: PathMutation,
-    pub required_params: ParamMutation, // Required parameters in query string
-    pub query_params: ParamMutation,    // Optional query parameters
-    pub expected: StatusCode,
-    pub explanation: String,
-}
+#[derive(Debug, PartialEq, Clone)]
+pub enum Mutagen {
+    EndpointProperValues,
+    // Path mutagen
+    PathProper,
+    PathRandom,
 
-#[derive(Debug, PartialEq)]
-pub enum PathMutation {
-    Proper,
-    Random,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum ParamMutation {
-    Static(RequestParam),
-    Proper,
-    Wrong,
+    // Query param mutagen
+    ParamProper,
+    WrongPattern,
     None,
-    //    Empty, // Empty values for strings or 0 for numbers, but is this correct or incorrect scenario?
+    BelowMinimumLength,
+    MinimumLength,
+    MaximumLength,
+    OverMaximumLength,
+    BelowMinimum,
+    Minimum,
+    Maximum,
+    OverMaximum,
+    EnumerationElement,
+    NotEnumerationElement,
+    Value(String),
+    StaticParam(RequestParam),
+    // EmptyString,
+    // HugelyLongString,
 }
 
-pub fn mutations() -> Vec<MutationInstruction> {
-    vec![
-        // TODO: Read all this from a file
-        MutationInstruction::new(
-            "Request with proper required parameters and no optional parameters",
-        )
-        .expected(StatusCode::OK),
-        MutationInstruction::new("Request without the needed required parameters")
-            .required_params(ParamMutation::None)
-            .expected(StatusCode::UNPROCESSABLE_ENTITY),
-        MutationInstruction::new("Request with incorrect required parameters")
-            .required_params(ParamMutation::Wrong)
-            .expected(StatusCode::UNPROCESSABLE_ENTITY),
-        MutationInstruction::new("Request with unknown id in the path")
-            .path_params(PathMutation::Random)
-            .expected(StatusCode::NOT_FOUND),
-        MutationInstruction::new("Request with extra known optional and proper parameters")
-            .query_params(ParamMutation::Proper)
-            .expected(StatusCode::OK),
-        MutationInstruction::new("Request with extra known optional but with improper parameters")
-            .query_params(ParamMutation::Wrong)
-            .expected(StatusCode::UNPROCESSABLE_ENTITY),
-        MutationInstruction::new("Request with extra unknown parameters <trusmis=mumi>")
-            .query_params(ParamMutation::static_values("trusmis", "mumi"))
-            .expected(StatusCode::OK),
-        MutationInstruction::new("Request with wrong content-type <jason>")
-            .content_type("minosTest/jason")
-            .expected(StatusCode::NOT_ACCEPTABLE),
-        MutationInstruction::new("Request with wrong method <TRACE>")
-            .method("TRACE")
-            .expected(StatusCode::NOT_FOUND),
-        //  .expected(StatusCode::METHOD_NOT_ALLOWED), Technically this status is more correct TODO
-    ]
-}
-
-impl ParamMutation {
-    fn static_values(name: &str, value: &str) -> Self {
-        ParamMutation::Static(RequestParam::new(name, value))
-    }
-}
-
-impl MutationInstruction {
-    fn new(explanation: &str) -> Self {
-        MutationInstruction {
-            content_type: None,
-            method: None,
-            crud_operation: None,
-            required_params: ParamMutation::Proper,
-            query_params: ParamMutation::None,
-            path_params: PathMutation::Proper,
-            expected: StatusCode::OK,
-            explanation: explanation.to_string(),
+impl fmt::Display for Mutagen {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Mutagen::EndpointProperValues => write!(f, "contains the proper value"),
+            Mutagen::None => write!(f, "not present"),
+            Mutagen::PathProper => write!(f, "contains the proper path"),
+            Mutagen::ParamProper => write!(f, "contains the proper param"),
+            Mutagen::WrongPattern => write!(f, "does not follow the proper format"),
+            Mutagen::PathRandom => write!(f, "contains a random path"),
+            Mutagen::BelowMinimumLength => write!(f, "below the minimum length of the string"),
+            Mutagen::MinimumLength => write!(f, "just the minimum length of the string"),
+            Mutagen::MaximumLength => write!(f, "just the maximum length of the string"),
+            Mutagen::OverMaximumLength => write!(f, "over the maximum length of the string"),
+            Mutagen::BelowMinimum => write!(f, "below the minimum value for this number"),
+            Mutagen::Minimum => write!(f, "just the minimum value for this number"),
+            Mutagen::Maximum => write!(f, "just the maximum value for this number"),
+            Mutagen::OverMaximum => write!(f, "over the maximum value for this number"),
+            Mutagen::EnumerationElement => write!(f, "a possible value of the enumeration"),
+            Mutagen::NotEnumerationElement => {
+                write!(f, "outside the possible values of the enumeration")
+            }
+            Mutagen::Value(string) => write!(f, "contains the value {}", string),
+            Mutagen::StaticParam(param) => write!(f, "contains the request parameter {:?}", param),
+            // Mutagen::EmptyString => write!(f, "contains an empty string"),
+            // Mutagen::HugelyLongString => write!(f, "contains an very long string"),
         }
     }
-    fn content_type(mut self, content_type: &str) -> Self {
-        self.content_type = Some(content_type.to_string());
-        self
-    }
+}
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
+pub enum RequestPart {
+    Path,
+    AnyParam,
+    RequiredParam,
+    OptionalParam,
+    Endpoint,
+    Method,
+    ContentType,
+}
+use std::fmt;
 
-    fn expected(mut self, expected: StatusCode) -> Self {
-        self.expected = expected;
-        self
+impl fmt::Display for RequestPart {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            RequestPart::Path => write!(f, "The path"),
+            RequestPart::AnyParam => write!(f, "Query parameter"),
+            RequestPart::OptionalParam => write!(f, "Optional query parameter"),
+            RequestPart::RequiredParam => write!(f, "Required query parameter"),
+            RequestPart::Endpoint => write!(f, "The endpoint"),
+            RequestPart::Method => write!(f, "The HTTP method"),
+            RequestPart::ContentType => write!(f, "The Content-Type"),
+        }
     }
+}
 
-    fn query_params(mut self, query_params: ParamMutation) -> Self {
-        self.query_params = query_params;
-        self
-    }
+#[derive(Debug, PartialEq, Clone)]
+pub struct MutagenInstruction {
+    pub mutagen: Mutagen,
+    pub request_part: RequestPart,
+    pub expected: StatusCode,
+}
 
-    fn required_params(mut self, required_params: ParamMutation) -> Self {
-        self.required_params = required_params;
-        self
+impl MutagenInstruction {
+    fn new(tuple: (RequestPart, Mutagen, StatusCode)) -> Self {
+        MutagenInstruction {
+            request_part: tuple.0,
+            mutagen: tuple.1,
+            expected: tuple.2,
+        }
     }
+    fn new_with_list(tuple: (RequestPart, StatusCode, Vec<Mutagen>)) -> Vec<Self> {
+        let (request_part, status_code, mutagens) = tuple;
+        mutagens
+            .into_iter()
+            .map(|mutagen| MutagenInstruction {
+                request_part: request_part.clone(),
+                mutagen: mutagen,
+                expected: status_code,
+            })
+            .collect()
+    }
+}
 
-    fn path_params(mut self, path_params: PathMutation) -> Self {
-        self.path_params = path_params;
-        self
+impl fmt::Display for MutagenInstruction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.request_part, self.mutagen)
     }
+}
 
-    fn method(mut self, method: &str) -> Self {
-        self.method = Some(method.to_string());
-        self
-    }
+pub fn schema_mutagens() -> Vec<MutagenInstruction> {
+    vec![
+        (
+            RequestPart::AnyParam,
+            StatusCode::OK,
+            vec![
+                Mutagen::ParamProper,
+                Mutagen::MinimumLength,
+                Mutagen::MaximumLength,
+                Mutagen::Minimum,
+                Mutagen::Maximum,
+                Mutagen::EnumerationElement,
+            ],
+        ),
+        (
+            RequestPart::RequiredParam,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            vec![Mutagen::None],
+        ),
+        (
+            RequestPart::OptionalParam,
+            StatusCode::OK,
+            vec![Mutagen::None],
+        ),
+        (
+            RequestPart::AnyParam,
+            StatusCode::UNPROCESSABLE_ENTITY,
+            vec![
+                Mutagen::WrongPattern,
+                Mutagen::BelowMinimumLength,
+                Mutagen::OverMaximumLength,
+                Mutagen::BelowMinimum,
+                Mutagen::OverMaximum,
+                Mutagen::NotEnumerationElement,
+            ],
+        ),
+    ]
+    .into_iter()
+    .flat_map(MutagenInstruction::new_with_list)
+    .collect()
+}
+
+pub fn mutagens() -> Vec<MutagenInstruction> {
+    vec![
+        (
+            RequestPart::Method,
+            Mutagen::EndpointProperValues,
+            StatusCode::OK,
+        ),
+        (
+            RequestPart::Method,
+            Mutagen::Value(String::from("TRACE")),
+            StatusCode::METHOD_NOT_ALLOWED,
+        ),
+        (RequestPart::Path, Mutagen::PathProper, StatusCode::OK),
+        (
+            RequestPart::Path,
+            Mutagen::PathRandom,
+            StatusCode::NOT_FOUND,
+        ),
+        (
+            RequestPart::ContentType,
+            Mutagen::Value(String::from("application/json")),
+            StatusCode::OK,
+        ),
+        (
+            RequestPart::ContentType,
+            Mutagen::Value(String::from("application/jason")),
+            StatusCode::NOT_ACCEPTABLE,
+        ),
+        (
+            RequestPart::Endpoint,
+            Mutagen::StaticParam(RequestParam::new("trusmis", "mimi")),
+            StatusCode::OK,
+        ),
+        // TODO: Additional uknown HTTP headers
+    ]
+    .into_iter()
+    .map(MutagenInstruction::new)
+    .collect()
 }

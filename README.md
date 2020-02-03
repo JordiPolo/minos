@@ -39,7 +39,7 @@ If no conversions file is found, Minos will still test all the endpoints that do
 
 Minos still can't discover IDs of resources for itself yet.
 It will call all the `index` routes which do not have required parameters.
-To call other routes which tipically require a parameter in the path, Minos allows you to create a conversions file.
+To call be able to call other routes with required parameters in the path or query string, Minos needs a conversions file.
 The default location for the file is `./conversions.minos` but this value can be overwriten with a parameter.
 The format of the file is simply:
 ```
@@ -96,7 +96,7 @@ In short, Minos is quite dumb and will just sustitute the strings, no questions 
 | Standalone binary      | Yes   | No. Needs NPM, V8 and dependencies |
 | Checks error responses | Yes   | No   |
 | Autogenerates scenarios| Yes   | No   |
-| OpenAPIv3 support      | Yes   | Yes  |
+| OpenAPIv3 support      | Yes   | Yes? |
 | CI support             | Yes   | Yes  |
 | API Blueprint support  | No    | Yes  |
 | Hooks                  | No    | Yes  |
@@ -109,26 +109,38 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 
 # Scenarios
 ## General
-- Unknown Content-Type. Implemented
-- Unknown method. Implemented.
-- Check response content-type. Assumes application/json.
+- Content-Type
+  - application/json
+  - Unknown Content-Type
+- Method
+  - GET
+  - Unknown
+- Path
+  - Proper values
+  - Unknown path
 
-## Any known operation
-- Check response body on all calls. Implemented
-- No params. Implemented
-- All required params. Implemented
-- Extra unknown params. Implemented
+## Query Parameters
+- No params.
+- All required params.
 - Valid optional params. Implemented
 - Invalid optional params. Implemented
-- All combinations of params. Not implemented
+- All combinations of params. Implemented
+  - In enumeration, outside enumeration
+  - Inside and outside string length limits
+  - Inside and outside numeric limits
+- Add extra unknown params. Not Implemented
 - Add extra unknown headers. Not implemented
 - Send parameters in their limits and outside their limits. Not implemented
+
+# Validations
+- Validate Content-Type
+- Validate status code
+- Validate response body
 
 
 # TODO
 - Implement all scenarios
 - Support hooks
-- Support `nullable` keyword
 
 
 # Contributing

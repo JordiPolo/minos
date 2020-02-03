@@ -125,7 +125,7 @@ fn validate_schema(
 // See https://github.com/mikunn/openapi-schema-to-json-schema
 fn openapi_schema_to_json_schema(schema_data: &openapiv3::Schema) -> serde_json::Value {
     let mut the_schema = schema_data.clone();
-    remove_examples(&mut the_schema);
+    remove_examples(&mut the_schema, 5);
 
     let serialized = serde_json::to_string(&the_schema).expect("Improper serialization of schema");
 
@@ -136,16 +136,19 @@ fn openapi_schema_to_json_schema(schema_data: &openapiv3::Schema) -> serde_json:
 
 // It seems Valico does not like having keywords like "type" in json examples.
 // Hacking around by just removing the examples, they are not needed anyways for validation
-fn remove_examples(schema: &mut openapiv3::Schema) {
+fn remove_examples(schema: &mut openapiv3::Schema, recursion: i32) {
+    if recursion == 0 {
+        return;
+    }
     match &mut schema.schema_kind {
         openapiv3::SchemaKind::Type(the_type) => match the_type {
             openapiv3::Type::Array(array) => {
-                remove_examples(&mut array.items.to_item_mut());
+                remove_examples(&mut array.items.to_item_mut(), recursion - 1);
                 schema.schema_data.example = None;
             }
             openapiv3::Type::Object(object) => {
                 for (_name, property) in &mut object.properties {
-                    remove_examples(&mut property.to_item_mut());
+                    remove_examples(&mut property.to_item_mut(), recursion - 1);
                 }
                 schema.schema_data.example = None;
             }
@@ -155,26 +158,26 @@ fn remove_examples(schema: &mut openapiv3::Schema) {
         },
         openapiv3::SchemaKind::OneOf { ref mut one_of } => {
             for sch in &mut one_of.iter_mut() {
-                remove_examples(sch.to_item_mut())
+                remove_examples(sch.to_item_mut(), recursion - 1)
             }
         }
         openapiv3::SchemaKind::AnyOf { ref mut any_of } => {
             for sch in &mut any_of.iter_mut() {
-                remove_examples(sch.to_item_mut())
+                remove_examples(sch.to_item_mut(), recursion - 1)
             }
         }
         openapiv3::SchemaKind::AllOf { ref mut all_of } => {
             for sch in &mut all_of.iter_mut() {
-                remove_examples(sch.to_item_mut())
+                remove_examples(sch.to_item_mut(), recursion - 1)
             }
         }
         openapiv3::SchemaKind::Any(schema) => {
             for (_name, property) in &mut schema.properties {
-                remove_examples(property.to_item_mut())
+                remove_examples(property.to_item_mut(), recursion - 1)
             }
             if schema.items.is_some() {
                 let the_items = schema.items.as_mut().unwrap();
-                remove_examples(the_items.to_item_mut())
+                remove_examples(the_items.to_item_mut(), recursion - 1)
             }
         }
     }

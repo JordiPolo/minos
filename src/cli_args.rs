@@ -35,6 +35,13 @@ pub struct CLIArgs {
     pub conv_filename: String,
 
     #[structopt(
+        short = "d",
+        long = "dry-run",
+        help = "In dryrun mode minos creates the scenarios but does not execute them against the server."
+    )]
+    pub dry_run: bool,
+
+    #[structopt(
         short = "s",
         long = "server",
         help = "Command to use to launch server",
