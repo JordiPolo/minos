@@ -1,7 +1,6 @@
 use crate::mutation::param_mutation::ParamMutation;
 use crate::mutation::Mutagen;
 use chrono::prelude::*;
-use rand::seq::SliceRandom;
 
 // TODO String type has "pattern"
 pub fn mutate(param: &openapiv3::Parameter, string_type: &openapiv3::StringType) -> ParamMutation {
@@ -13,12 +12,15 @@ pub fn mutate(param: &openapiv3::Parameter, string_type: &openapiv3::StringType)
     // mutations.push(&long_string, Mutagen::HugelyLongString);
 
     if !string_type.enumeration.is_empty() {
-        // Proper enum value
-        let mut rng = rand::thread_rng();
-        let value = string_type.enumeration.choose(&mut rng).unwrap();
-        mutations.push(value, Mutagen::EnumerationElement);
-        // Improper enum value
+        for element in &string_type.enumeration {
+            mutations.push(&element, Mutagen::EnumerationElement);
+            if !element.chars().all(char::is_uppercase) {
+                mutations.push(&element.to_uppercase(), Mutagen::NotEnumerationElement);
+            }
+        }
+        mutations.push("", Mutagen::NotEnumerationElement);
         mutations.push("NotInAnyEnum", Mutagen::NotEnumerationElement);
+
     } else if string_type.format == openapiv3::VariantOrUnknownOrEmpty::Empty {
         if let Some(min) = string_type.min_length {
             if min > 1 {

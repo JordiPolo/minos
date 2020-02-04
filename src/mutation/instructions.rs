@@ -98,13 +98,13 @@ impl MutagenInstruction {
         }
     }
     fn new_with_list(tuple: (RequestPart, StatusCode, Vec<Mutagen>)) -> Vec<Self> {
-        let (request_part, status_code, mutagens) = tuple;
+        let (request_part, expected, mutagens) = tuple;
         mutagens
             .into_iter()
             .map(|mutagen| MutagenInstruction {
                 request_part: request_part.clone(),
-                mutagen: mutagen,
-                expected: status_code,
+                mutagen,
+                expected,
             })
             .collect()
     }

@@ -81,6 +81,7 @@ pub fn run_summary(results: &Vec<(String, bool)>, start: std::time::Instant) {
     }
 
     println!("{}", table);
+    println!("Consider using a conversions file to increase the coverage of endpoints with required parameters.");
 
     println!(
         "{} scenarios executed in {:?}.\n {:?} passed, {:?} failed.",

@@ -124,6 +124,7 @@ impl Mutator {
         debug!("QM size {:?}", query_mutations.len());
         // TODO: CLI param to do or not do crazy amount of combinations.
         //Group by request part or parameter so later can do combinations
+        // group_by only works well on sorted vectors
         for (_key, group) in &query_mutations
             .iter()
             .sorted_by(|a, b| {
@@ -147,72 +148,109 @@ impl Mutator {
 
         // TODO: Deal with the explosion in a more elegant way.
         // TODO: Report better when an endpoint is not being mutated
-        if query_params.iter().map(|a| a.len()).product::<usize>() > 1000 {
-            println!(
-                "Too many mutations for this endpoint {}.",
-                endpoint.path_name
-            );
-            return scenarios;
-        }
+        // if query_params.iter().map(|a| a.len()).product::<usize>() > 100_000 {
+        //     println!(
+        //         "Too many mutations for this endpoint {}.",
+        //         endpoint.path_name
+        //     );
+        //     return scenarios;
+        // }
 
-        // Make a copy of the first item of each vector which is per each requestPart or each parameter
-        let mut first_query_params = Vec::new();
-        let mut first_nq = Vec::new();
 
-        for q in &query_params {
-            first_query_params.push(vec![*q.get(0).unwrap()]);
-        }
+       // We do not do combinations anymore
+        let mut combinations = Vec::new();
 
-        for q in &non_query_params {
-            first_nq.push(vec![*q.get(0).unwrap()]);
-        }
+        let mut params = non_query_params.clone();
+        params.append(&mut query_params);
 
-        // Now we have a set of arrays "first_nq" which all contain 1 element, this should be a passing
-        // mutation, we put them together with the rest of the query params.
-        // Later when these guys combine, we will have combinations limited to only on one side the
-        // one elemnt and on the other many dimensions if available.
-        // We do the same for the other side and concat.
-
-        //The whole goal of this implementation is to avoid an all-with-all combination which would be wasteful.
-        query_params.to_vec().append(&mut first_nq);
-        non_query_params.to_vec().append(&mut first_query_params);
-
-        let mut all_things: Vec<Vec<&Mutation>> = non_query_params
-            .into_iter()
-            .multi_cartesian_product()
-            .collect();
-
-        debug!("number  of all nonquery param {:?}", all_things.len());
-
-        let mut combination2: Vec<Vec<&Mutation>> =
-            query_params.into_iter().multi_cartesian_product().collect();
-
-        all_things.append(&mut combination2);
-
-        debug!("number  of all things {:?}", all_things.len());
-        debug!(" of all things 1 {:?}", all_things[0]);
-        for combination in all_things {
-            let mut expected: Vec<StatusCode> =
-                combination.iter().map(|m| m.mutagen.expected).collect();
-            expected.push(StatusCode::OK); // To avoid matching on a combination with only errors
-            expected.sort();
-            expected.dedup();
-
-            debug!("These are expected {:?}\n", expected);
-            if expected.len() < 3 {
-                debug!("new scenario");
-                // Get a request from the combination of the things
-                let request = Mutator::request_from_instructions(combination.clone());
-                // TODO from it create scenario
-                let scenario = Scenario::new(
-                    endpoint.clone(),
-                    combination.clone().into_iter().cloned().collect(),
-                    request,
-                );
-                scenarios.push(scenario);
+        for i in 0..params.len()-1 {
+            for j in 1..params[i].len() { //Start from 1 becase we will be choosing the element 0 in inner loop
+                let mut temp = Vec::new();
+                for z in 0..params.len()-1 {
+                    if i == z {
+                        continue;
+                    }
+                    temp.push(params[z][0]);
+                }
+                temp.push(params[i][j]);
+                combinations.push(temp);
             }
         }
+
+        for combination in combinations {
+            let request = Mutator::request_from_instructions(combination.clone());
+            let scenario = Scenario::new(
+                endpoint.clone(),
+                combination.into_iter().cloned().collect(),
+                request,
+            );
+            scenarios.push(scenario);
+        }
+
         scenarios
+
+        // Make a copy of the first item of each vector which is per each requestPart or each parameter
+        // let mut first_query_params = Vec::new();
+        // let mut first_nq = Vec::new();
+
+        // for q in &query_params {
+        //     first_query_params.push(vec![*q.get(0).unwrap()]);
+        // }
+
+        // for q in &non_query_params {
+        //     first_nq.push(vec![*q.get(0).unwrap()]);
+        // }
+
+        // // Now we have a set of arrays "first_nq" which all contain 1 element, this should be a passing
+        // // mutation, we put them together with the rest of the query params.
+        // // Later when these guys combine, we will have combinations limited to only on one side the
+        // // one elemnt and on the other many dimensions if available.
+        // // We do the same for the other side and concat.
+
+        // //The whole goal of this implementation is to avoid an all-with-all combination which would be wasteful.
+        // query_params.to_vec().append(&mut first_nq);
+        // non_query_params.to_vec().append(&mut first_query_params);
+
+        // let mut all_things: Vec<Vec<&Mutation>> = non_query_params
+        //     .into_iter()
+        //     .multi_cartesian_product()
+        //     .collect();
+
+        // debug!("number  of all nonquery param {:?}", all_things.len());
+
+        // let mut combination2: Vec<Vec<&Mutation>> =
+        //     query_params.into_iter().multi_cartesian_product().collect();
+
+        // all_things.append(&mut combination2);
+
+        // // TODO: Instead of creating huge amount of combinations and then filter, be more intelligent
+        // debug!("number  of all things {:?}", all_things.len());
+        // debug!(" of all things 1 {:?}", all_things[0]);
+        // for combination in all_things {
+        //     let erroring = combination.iter().filter(|&m| m.mutagen.expected != StatusCode::OK).count();
+
+        //     // let mut expected: Vec<StatusCode> =
+        //     //     combination.iter().map(|m| m.mutagen.expected).collect();
+        //     // expected.push(StatusCode::OK); // To avoid matching on a combination with only errors
+        //     // expected.sort();
+        //     // expected.dedup();
+
+        //     // debug!("These are expected {:?}\n", expected);
+        //     // if expected.len() < 3 {
+        //     if erroring <= 1 {
+        //         debug!("new scenario");
+        //         // Get a request from the combination of the things
+        //         let request = Mutator::request_from_instructions(combination.clone());
+        //         // TODO from it create scenario
+        //         let scenario = Scenario::new(
+        //             endpoint.clone(),
+        //             combination.clone().into_iter().cloned().collect(),
+        //             request,
+        //         );
+        //         scenarios.push(scenario);
+        //     }
+        // }
+        // scenarios
     }
 
     fn request_from_instructions(mutations: Vec<&Mutation>) -> Request {
