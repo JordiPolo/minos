@@ -5,8 +5,8 @@ use openapi_utils::OperationExt;
 use reqwest::StatusCode;
 
 #[derive(Debug)]
-pub struct Scenario {
-    pub endpoint: operation::Endpoint,
+pub struct Scenario<'a> {
+    pub endpoint: &'a operation::Endpoint,
     pub instructions: Vec<Mutation>,
     pub request: Request,
 }
@@ -18,9 +18,9 @@ pub struct ScenarioExpectation<'a> {
     pub content_type: String,
 }
 
-impl Scenario {
+impl<'a> Scenario<'a> {
     pub fn new(
-        endpoint: operation::Endpoint,
+        endpoint: &'a operation::Endpoint,
         instructions: Vec<Mutation>,
         request: Request,
     ) -> Self {

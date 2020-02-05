@@ -1,5 +1,5 @@
 //mod string_validator;
-//#![deny(clippy::all)]
+#![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
 mod cli_args;
@@ -26,17 +26,17 @@ fn main() {
     let spec = spec::read(&config.filename).deref_all();
     let service = Service::new(&config, spec.servers[0].base_path());
     let mutator = mutation::Mutator::new(&config.conv_filename);
-
-    // Create endpoints from the spec file.
-    let endpoints = spec.paths.iter().flat_map(|(path_name, methods)| {
-        operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
-    });
-
     let mut results = Vec::new();
 
-    let start = Instant::now();
-    let scenarios = endpoints.flat_map(|e| mutator.mutate(&e));
 
+    // Create endpoints from the spec file.
+    let endpoints: Vec<operation::Endpoint> = spec.paths.iter().flat_map(|(path_name, methods)| {
+        operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
+    }).collect();
+
+    let scenarios = endpoints.iter().flat_map(|e| mutator.mutate(e));
+
+    let start = Instant::now();
     for scenario in scenarios {
         //  println!("{:?}", scenario.instructions);
         reporter::print_mutation_scenario(&scenario);

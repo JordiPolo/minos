@@ -39,13 +39,14 @@ http = "*"
 shellexpand = "1.0"
 itertools = "0.8"
 comfy-table = "0.0.6"
+lazy_static = "*"
 
 [patch.crates-io]
 openapiv3 = { git = "https://github.com/glademiller/openapiv3", branch = "master" }
 
 
 [profile.dev]
-debug=0
+debug = 0
 
 [profile.release]
 opt-level = 3

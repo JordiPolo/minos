@@ -9,6 +9,7 @@ use itertools::Itertools;
 use log::debug;
 use openapi_utils::{OperationExt, ParameterExt, ReferenceOrExt};
 use std::cmp::Ordering;
+use lazy_static::lazy_static;
 
 mod bool_type;
 pub mod instructions;
@@ -16,9 +17,6 @@ mod integer_type;
 pub mod param_mutation;
 mod params;
 mod string_type;
-
-// Data integrity SLO
-// secuence diagrams
 
 #[derive(Debug, Clone)]
 pub struct Mutation {
@@ -69,7 +67,7 @@ impl PartialOrd for Mutation {
 use std::fmt;
 impl fmt::Display for Mutation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "-  {}", self.mutagen)?;
+        write!(f, "  -  {}", self.mutagen)?;
 
         if let Some(value) = &self.value {
             write!(f, "  \"{}\"", value)?;
@@ -103,7 +101,7 @@ impl Mutator {
         }
     }
 
-    pub fn mutate(&self, endpoint: &Endpoint) -> Vec<Scenario> {
+    pub fn mutate<'a>(&self, endpoint: &'a Endpoint) -> Vec<Scenario<'a>> {
         let mutations = self.mutations_from_mutagen(&endpoint, instructions::mutagens());
         let query_mutations =
             self.mutations_from_mutagen_query(&endpoint, instructions::schema_mutagens());
@@ -111,12 +109,13 @@ impl Mutator {
         self.scenarios_from_mutations(&endpoint, &mutations, &query_mutations)
     }
 
-    fn scenarios_from_mutations(
+    fn scenarios_from_mutations<'a>(
         &self,
-        endpoint: &Endpoint,
+        endpoint: &'a Endpoint,
         mutations: &[Mutation],
         query_mutations: &[Mutation],
-    ) -> Vec<Scenario> {
+    ) -> Vec<Scenario<'a>> {
+
         let mut scenarios = vec![];
         let mut query_params: Vec<Vec<&Mutation>> = Vec::new();
         let mut non_query_params: Vec<Vec<&Mutation>> = Vec::new();
@@ -160,7 +159,7 @@ impl Mutator {
        // We do not do combinations anymore
         let mut combinations = Vec::new();
 
-        let mut params = non_query_params.clone();
+        let mut params = non_query_params;
         params.append(&mut query_params);
 
         for i in 0..params.len()-1 {
@@ -178,9 +177,9 @@ impl Mutator {
         }
 
         for combination in combinations {
-            let request = Mutator::request_from_instructions(combination.clone());
+            let request = Mutator::request_from_instructions(&combination);
             let scenario = Scenario::new(
-                endpoint.clone(),
+                endpoint,
                 combination.into_iter().cloned().collect(),
                 request,
             );
@@ -253,7 +252,7 @@ impl Mutator {
         // scenarios
     }
 
-    fn request_from_instructions(mutations: Vec<&Mutation>) -> Request {
+    fn request_from_instructions(mutations: &[&Mutation]) -> Request {
         let mut request = Request::new();
         let mut query_params = Vec::new();
         for mutation in mutations {
@@ -400,6 +399,9 @@ impl Mutator {
     }
 
     fn make_path2(&self, path: &str, mutagen: &Mutagen) -> Option<String> {
+        lazy_static! {
+            static ref VARIABLE_FINDER: regex::Regex = regex::Regex::new(r"\{.*?\}").unwrap();
+        }
         match mutagen {
             Mutagen::PathProper => {
                 if path.contains('}') {
@@ -411,8 +413,8 @@ impl Mutator {
             }
             Mutagen::PathRandom => {
                 if path.contains('}') {
-                    let re = regex::Regex::new(r"\{.*?\}").unwrap();
-                    Some(re.replace_all(path, "wrongPathItemHere").to_string())
+                    //let re = regex::Regex::new(r"\{.*?\}").unwrap();
+                    Some(VARIABLE_FINDER.replace_all(path, "wrongPathItemHere").to_string())
                 } else {
                     None // We can't make random something that's is not there
                 }

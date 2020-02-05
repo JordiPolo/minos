@@ -31,23 +31,23 @@ pub enum Mutagen {
 impl fmt::Display for Mutagen {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Mutagen::EndpointProperValues => write!(f, "contains the proper value"),
-            Mutagen::None => write!(f, "not present"),
-            Mutagen::PathProper => write!(f, "contains the proper path"),
-            Mutagen::ParamProper => write!(f, "contains the proper param"),
-            Mutagen::WrongPattern => write!(f, "does not follow the proper format"),
-            Mutagen::PathRandom => write!(f, "contains a random path"),
-            Mutagen::BelowMinimumLength => write!(f, "below the minimum length of the string"),
-            Mutagen::MinimumLength => write!(f, "just the minimum length of the string"),
-            Mutagen::MaximumLength => write!(f, "just the maximum length of the string"),
-            Mutagen::OverMaximumLength => write!(f, "over the maximum length of the string"),
-            Mutagen::BelowMinimum => write!(f, "below the minimum value for this number"),
-            Mutagen::Minimum => write!(f, "just the minimum value for this number"),
-            Mutagen::Maximum => write!(f, "just the maximum value for this number"),
-            Mutagen::OverMaximum => write!(f, "over the maximum value for this number"),
-            Mutagen::EnumerationElement => write!(f, "a possible value of the enumeration"),
+            Mutagen::EndpointProperValues => f.write_str("contains the proper value"),
+            Mutagen::None => f.write_str("not present"),
+            Mutagen::PathProper => f.write_str("contains the proper path"),
+            Mutagen::ParamProper => f.write_str("contains the proper param"),
+            Mutagen::WrongPattern => f.write_str("does not follow the proper format"),
+            Mutagen::PathRandom => f.write_str("contains a random path"),
+            Mutagen::BelowMinimumLength => f.write_str("below the minimum length of the string"),
+            Mutagen::MinimumLength => f.write_str("just the minimum length of the string"),
+            Mutagen::MaximumLength => f.write_str("just the maximum length of the string"),
+            Mutagen::OverMaximumLength => f.write_str("over the maximum length of the string"),
+            Mutagen::BelowMinimum => f.write_str("below the minimum value for this number"),
+            Mutagen::Minimum => f.write_str("just the minimum value for this number"),
+            Mutagen::Maximum => f.write_str("just the maximum value for this number"),
+            Mutagen::OverMaximum => f.write_str("over the maximum value for this number"),
+            Mutagen::EnumerationElement => f.write_str("a possible value of the enumeration"),
             Mutagen::NotEnumerationElement => {
-                write!(f, "outside the possible values of the enumeration")
+                f.write_str("outside the possible values of the enumeration")
             }
             Mutagen::Value(string) => write!(f, "contains the value {}", string),
             Mutagen::StaticParam(param) => write!(f, "contains the request parameter {:?}", param),
@@ -71,13 +71,13 @@ use std::fmt;
 impl fmt::Display for RequestPart {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            RequestPart::Path => write!(f, "The path"),
-            RequestPart::AnyParam => write!(f, "Query parameter"),
-            RequestPart::OptionalParam => write!(f, "Optional query parameter"),
-            RequestPart::RequiredParam => write!(f, "Required query parameter"),
-            RequestPart::Endpoint => write!(f, "The endpoint"),
-            RequestPart::Method => write!(f, "The HTTP method"),
-            RequestPart::ContentType => write!(f, "The Content-Type"),
+            RequestPart::Path => f.write_str("The path"),
+            RequestPart::AnyParam => f.write_str("Query parameter"),
+            RequestPart::OptionalParam => f.write_str( "Optional query parameter"),
+            RequestPart::RequiredParam => f.write_str("Required query parameter"),
+            RequestPart::Endpoint => f.write_str("The endpoint"),
+            RequestPart::Method => f.write_str("The HTTP method"),
+            RequestPart::ContentType => f.write_str("The Content-Type"),
         }
     }
 }
