@@ -16,7 +16,9 @@ mod validator;
 
 use log::debug;
 use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
+use rayon::prelude::*;
 use std::time::Instant;
+
 
 use crate::service::Service;
 fn main() {
@@ -28,13 +30,20 @@ fn main() {
     let mutator = mutation::Mutator::new(&config.conv_filename);
     let mut results = Vec::new();
 
-
     // Create endpoints from the spec file.
-    let endpoints: Vec<operation::Endpoint> = spec.paths.iter().flat_map(|(path_name, methods)| {
-        operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
-    }).collect();
+    let endpoints: Vec<operation::Endpoint> = spec
+        .paths
+        .iter()
+        .filter(|p| p.0.contains(&config.matches))
+        .flat_map(|(path_name, methods)| {
+            operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
+        })
+        .collect();
 
-    let scenarios = endpoints.iter().flat_map(|e| mutator.mutate(e));
+    let scenarios: Vec<_> = endpoints
+        .par_iter()
+        .flat_map(|e| mutator.mutate(e))
+        .collect();
 
     let start = Instant::now();
     for scenario in scenarios {
@@ -55,7 +64,11 @@ fn main() {
                 results.push((path, false));
             }
             Ok(real_response) => {
-                match validator::validate(real_response, scenario.expectation()) {
+                match validator::validate(
+                    real_response,
+                    scenario.expectation(),
+                    config.allow_missing_rs,
+                ) {
                     Err(error) => {
                         debug!("{:?}", scenario.endpoint);
                         reporter::test_failed(error);

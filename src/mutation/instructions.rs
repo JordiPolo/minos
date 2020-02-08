@@ -73,7 +73,7 @@ impl fmt::Display for RequestPart {
         match *self {
             RequestPart::Path => f.write_str("The path"),
             RequestPart::AnyParam => f.write_str("Query parameter"),
-            RequestPart::OptionalParam => f.write_str( "Optional query parameter"),
+            RequestPart::OptionalParam => f.write_str("Optional query parameter"),
             RequestPart::RequiredParam => f.write_str("Required query parameter"),
             RequestPart::Endpoint => f.write_str("The endpoint"),
             RequestPart::Method => f.write_str("The HTTP method"),

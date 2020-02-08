@@ -20,7 +20,6 @@ pub fn mutate(param: &openapiv3::Parameter, string_type: &openapiv3::StringType)
         }
         mutations.push("", Mutagen::NotEnumerationElement);
         mutations.push("NotInAnyEnum", Mutagen::NotEnumerationElement);
-
     } else if string_type.format == openapiv3::VariantOrUnknownOrEmpty::Empty {
         if let Some(min) = string_type.min_length {
             if min > 1 {

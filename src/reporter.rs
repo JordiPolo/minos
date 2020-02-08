@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use std::io::Write;
-use termcolor::{Color, ColorChoice, ColorSpec, BufferedStandardStream, WriteColor};
+use termcolor::{BufferedStandardStream, Color, ColorChoice, ColorSpec, WriteColor};
 
 use crate::error::Disparity;
 use crate::scenario::Scenario;
@@ -62,7 +62,7 @@ pub fn print_mutation_scenario(scenario: &Scenario) {
 use itertools::Itertools;
 
 pub fn run_summary(results: &[(String, bool)], start: std::time::Instant) {
-    let failed = results.iter().filter(|&x| !x.1 ).count();
+    let failed = results.iter().filter(|&x| !x.1).count();
     let by_path = results.iter().group_by(|x| &x.0);
 
     let mut table = Table::new();
@@ -71,7 +71,7 @@ pub fn run_summary(results: &[(String, bool)], start: std::time::Instant) {
     for (path, results) in &by_path {
         // let total = &results.into_iter().len();
         let (pfailed, ppassed): (Vec<&(String, bool)>, Vec<&(String, bool)>) =
-            results.partition(|&x| !x.1 );
+            results.partition(|&x| !x.1);
         let the_size = pfailed.len() + ppassed.len();
 
         table.add_row(vec![

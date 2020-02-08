@@ -42,6 +42,21 @@ pub struct CLIArgs {
     pub dry_run: bool,
 
     #[structopt(
+        short = "amrs",
+        long = "allow-missing-rs",
+        help = "Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses."
+    )]
+    pub allow_missing_rs: bool,
+
+    #[structopt(
+        short = "m",
+        long = "matches",
+        help = "Only run on paths matching certain paths.",
+        default_value = "/"
+    )]
+    pub matches: String,
+
+    #[structopt(
         short = "s",
         long = "server",
         help = "Command to use to launch server",

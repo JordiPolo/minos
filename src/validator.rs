@@ -10,6 +10,7 @@ use crate::service;
 pub fn validate(
     response: service::ServiceResponse,
     expectation: crate::scenario::ScenarioExpectation,
+    allow_missing_rs: bool,
 ) -> Result<(), Disparity> {
     if response.status != expectation.status_code {
         return Err(error::status_disparity(
@@ -34,6 +35,10 @@ pub fn validate(
     }
 
     let response_body = response.body.map_err(|_| Disparity::JsonError)?;
+
+    if allow_missing_rs {
+        return Ok(());
+    }
 
     let schema_body = extract_schema(expectation.status_code, expectation.body)?;
 

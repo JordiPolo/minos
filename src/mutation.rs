@@ -6,10 +6,10 @@ use crate::service::Request;
 use http::StatusCode;
 use instructions::{Mutagen, MutagenInstruction, RequestPart};
 use itertools::Itertools;
+use lazy_static::lazy_static;
 use log::debug;
 use openapi_utils::{OperationExt, ParameterExt, ReferenceOrExt};
 use std::cmp::Ordering;
-use lazy_static::lazy_static;
 
 mod bool_type;
 pub mod instructions;
@@ -115,7 +115,6 @@ impl Mutator {
         mutations: &[Mutation],
         query_mutations: &[Mutation],
     ) -> Vec<Scenario<'a>> {
-
         let mut scenarios = vec![];
         let mut query_params: Vec<Vec<&Mutation>> = Vec::new();
         let mut non_query_params: Vec<Vec<&Mutation>> = Vec::new();
@@ -155,17 +154,17 @@ impl Mutator {
         //     return scenarios;
         // }
 
-
-       // We do not do combinations anymore
+        // We do not do combinations anymore
         let mut combinations = Vec::new();
 
         let mut params = non_query_params;
         params.append(&mut query_params);
 
-        for i in 0..params.len()-1 {
-            for j in 1..params[i].len() { //Start from 1 becase we will be choosing the element 0 in inner loop
+        for i in 0..params.len() - 1 {
+            for j in 1..params[i].len() {
+                //Start from 1 becase we will be choosing the element 0 in inner loop
                 let mut temp = Vec::new();
-                for z in 0..params.len()-1 {
+                for z in 0..params.len() - 1 {
                     if i == z {
                         continue;
                     }
@@ -414,7 +413,11 @@ impl Mutator {
             Mutagen::PathRandom => {
                 if path.contains('}') {
                     //let re = regex::Regex::new(r"\{.*?\}").unwrap();
-                    Some(VARIABLE_FINDER.replace_all(path, "wrongPathItemHere").to_string())
+                    Some(
+                        VARIABLE_FINDER
+                            .replace_all(path, "wrongPathItemHere")
+                            .to_string(),
+                    )
                 } else {
                     None // We can't make random something that's is not there
                 }
