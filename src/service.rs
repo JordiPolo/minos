@@ -117,7 +117,7 @@ pub struct Service {
     base_url: String,
     base_path: String,
     server: Option<Child>,
-    client: reqwest::blocking::Client,
+    client: reqwest::Client, //reqwest::blocking::Client,
 }
 
 pub struct ServiceResponse {
@@ -154,7 +154,7 @@ impl Service {
         };
         //    let server = None;
 
-        let client = reqwest::blocking::Client::new();
+        let client = reqwest::Client::new();
         Service {
             base_url: config.base_url.clone(),
             base_path,
@@ -163,16 +163,15 @@ impl Service {
         }
     }
 
-    pub fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
+    pub async fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
         let endpoint = request.url(&self.base_url, &self.base_path);
         info!("Sending request {:?}", request);
-
         debug!("Request headers {:?}", request.headers());
         let resp = self
             .client
             .request(request.method(), &endpoint)
             .headers(request.headers())
-            .send()?;
+            .send().await?;
 
         debug!("Response headers {:?}", resp.headers());
 
@@ -183,7 +182,9 @@ impl Service {
                     .expect("Non ASCII characters found in your content-type header."),
             )
         });
-        let body = resp.text()?;
+        let body = resp.text().await?;
+
+
 
         Ok(ServiceResponse {
             status,

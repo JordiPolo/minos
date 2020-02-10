@@ -16,12 +16,12 @@ mod validator;
 
 use log::debug;
 use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
-use rayon::prelude::*;
 use std::time::Instant;
 
 
 use crate::service::Service;
-fn main() {
+#[tokio::main]
+async fn main() {
     env_logger::init();
 
     let config = cli_args::config();
@@ -29,6 +29,8 @@ fn main() {
     let service = Service::new(&config, spec.servers[0].base_path());
     let mutator = mutation::Mutator::new(&config.conv_filename);
     let mut results = Vec::new();
+
+    let start = Instant::now();
 
     // Create endpoints from the spec file.
     let endpoints: Vec<operation::Endpoint> = spec
@@ -40,23 +42,20 @@ fn main() {
         })
         .collect();
 
-    let scenarios: Vec<_> = endpoints
-        .par_iter()
-        .flat_map(|e| mutator.mutate(e))
-        .collect();
+    let scenarios  = endpoints.iter()
+        .flat_map(|e| mutator.mutate(e));
 
-    let start = Instant::now();
     for scenario in scenarios {
-        //  println!("{:?}", scenario.instructions);
-        reporter::print_mutation_scenario(&scenario);
         let path = scenario.endpoint.path_name.clone();
+
+        reporter::print_mutation_scenario(&scenario);
         if config.dry_run {
             println!("Dry run mode. No request executed.\n");
             results.push((path, true));
             continue;
         }
 
-        let response = service.send(&scenario.request);
+        let response = service.send(&scenario.request).await;
 
         match response {
             Err(e) => {

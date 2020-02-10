@@ -3,13 +3,13 @@ use crate::operation::Endpoint;
 use crate::request_param::RequestParam;
 use crate::scenario::Scenario;
 use crate::service::Request;
-use http::StatusCode;
 use instructions::{Mutagen, MutagenInstruction, RequestPart};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use log::debug;
-use openapi_utils::{OperationExt, ParameterExt, ReferenceOrExt};
+use openapi_utils::{OperationExt, ParameterExt};
 use std::cmp::Ordering;
+use http::StatusCode;
 
 mod bool_type;
 pub mod instructions;
@@ -121,7 +121,7 @@ impl Mutator {
 
         debug!("QM size {:?}", query_mutations.len());
         // TODO: CLI param to do or not do crazy amount of combinations.
-        //Group by request part or parameter so later can do combinations
+        // Group by request part or parameter so later can do combinations
         // group_by only works well on sorted vectors
         for (_key, group) in &query_mutations
             .iter()
@@ -144,38 +144,51 @@ impl Mutator {
             non_query_params.push(group.collect());
         }
 
-        // TODO: Deal with the explosion in a more elegant way.
-        // TODO: Report better when an endpoint is not being mutated
-        // if query_params.iter().map(|a| a.len()).product::<usize>() > 100_000 {
-        //     println!(
-        //         "Too many mutations for this endpoint {}.",
-        //         endpoint.path_name
-        //     );
-        //     return scenarios;
-        // }
 
-        // We do not do combinations anymore
         let mut combinations = Vec::new();
 
-        let mut params = non_query_params;
-        params.append(&mut query_params);
+        // Put everything together
+        let mut total = non_query_params;
+        total.append(&mut query_params);
 
-        for i in 0..params.len() - 1 {
-            for j in 1..params[i].len() {
-                //Start from 1 becase we will be choosing the element 0 in inner loop
-                let mut temp = Vec::new();
-                for z in 0..params.len() - 1 {
-                    if i == z {
-                        continue;
+        // As per the sorting the first item on each column should be a passing mutation
+        let mut all_good = Vec::new();
+        for i in 0..total.len() {
+            all_good.push(total[i][0]);
+        }
+
+        // If any error here that means we can't combine that category
+        let really_all_good = all_good.iter().all(|&m| m.mutagen.expected == StatusCode::OK);//.count();
+
+        combinations.push(all_good);
+
+        // If we can't do anything in one of the categories, there is no point of creating combinations
+        // All of them with the same failing guy.
+        if really_all_good {
+            for i in 0..total.len() { //each category
+                for j in 1..total[i].len() { //each value in a category
+                    //Start from 1 becase we will be choosing the element 0 in inner loop
+                    // If we do 0 here we will choose again and again the top elements.
+                    let mut temp = Vec::new();
+                    for z in 0..total.len() { // now we transverse the thing to get one from each
+                        if i == z {
+                            temp.push(total[z][j]);
+                            //continue;
+                        } else {
+                            temp.push(total[z][0]);
+                        }
                     }
-                    temp.push(params[z][0]);
+                    combinations.push(temp);
                 }
-                temp.push(params[i][j]);
-                combinations.push(temp);
             }
         }
 
         for combination in combinations {
+            let erroring = combination.iter().filter(|&m| m.mutagen.expected != StatusCode::OK).count();
+            if erroring > 1 {
+                continue;
+            }
+
             let request = Mutator::request_from_instructions(&combination);
             let scenario = Scenario::new(
                 endpoint,
@@ -221,7 +234,6 @@ impl Mutator {
 
         // all_things.append(&mut combination2);
 
-        // // TODO: Instead of creating huge amount of combinations and then filter, be more intelligent
         // debug!("number  of all things {:?}", all_things.len());
         // debug!(" of all things 1 {:?}", all_things[0]);
         // for combination in all_things {

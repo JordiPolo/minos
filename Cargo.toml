@@ -22,7 +22,7 @@ serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 serde_yaml = "*"
-reqwest = { version = "0.10", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+reqwest = { version = "0.10", default-features = false, features = ["json", "rustls-tls"] }
 structopt = "0.3"
 termcolor = "1.0"
 uuid = { version = ">= 0.6", features = ["v4"] }
@@ -40,7 +40,7 @@ shellexpand = "1.0"
 itertools = "0.8"
 comfy-table = "0.0.6"
 lazy_static = "*"
-rayon = "1.1"
+tokio = { version = "0.2", features = ["full"] }
 
 [patch.crates-io]
 openapiv3 = { git = "https://github.com/glademiller/openapiv3", branch = "master" }
