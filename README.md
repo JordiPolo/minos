@@ -16,7 +16,7 @@ These are static binaries, they have zero dependencies and can run in any system
 
 # Usage
 
-If you are using Rails, simply run:
+If you are using Rails, simply run in your project path:
 ```
 minos --run_server
 ```
@@ -31,6 +31,24 @@ If the defaults do not work for you or are using some other technology, you can 
 In CI, it is often useful for minos to start the application server by itself.
 -  -s, --server <server-command>           Command to use to launch server [default: bundle exec rails server]
 -  -t, --timeout <server-wait>             Timeout allowed for the service to startup [default: 10]
+
+Additionally you can customize the behaviour with:
+ - -d, --dry-run         In dryrun mode minos creates the scenarios but does not execute them against the server.
+ - --allow-missing-rs    Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses.
+ - -m, --matches <matches>   Only run on paths matching certain paths. [default: /]. Useful to focus on certain areas of the API.
+
+ ## Example
+
+Let's just match the paths with the text "users" in them from this huge service and not run agains it:
+```
+./minos -f=huge_service/api_definition/openapi.yaml -m=users --dry-run
+```
+
+Looks good, let's run the whole thing against local. The API does not define errors responses' bodies.
+```
+./minos -f=huge_service/api_definition/openapi.yaml -u=http://localhost:9090 --allow-missing-rs
+```
+
 
 
 ## Conversions file
