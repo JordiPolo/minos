@@ -85,6 +85,20 @@ jobs:
         override: true
         target: ${{ matrix.target }}
 
+    # To install C libraries like backtrace-sys
+    # - name: Install and configure Cross
+    #   if: matrix.target != ''
+    #   run: |
+    #     # FIXME: to work around bugs in latest cross release, install master.
+    #     # See: https://github.com/rust-embedded/cross/issues/357
+    #     cargo install --git https://github.com/rust-embedded/cross
+    #     echo "::set-env name=CARGO::cross"
+    #     echo "::set-env name=TARGET_FLAGS::--target ${{ matrix.target }}"
+
+    - name: Install musl-gcc for backtrace-sys
+      if: matrix.build == 'linux'
+      run: sudo apt-get install musl-tools
+
     - name: Set TARGET flags
       run: echo "::set-env name=TARGET_FLAGS::--target ${{ matrix.target }}"
 
@@ -101,7 +115,7 @@ jobs:
         echo "::set-env name=RELEASE_UPLOAD_URL::$release_upload_url"
         echo "release upload url: $RELEASE_UPLOAD_URL"
     - name: Build release binary
-      run: cargo build --manifest-path minos/Cargo.toml --verbose --release ${{ env.TARGET_FLAGS }}
+      run: cargo build  --release ${{ env.TARGET_FLAGS }}
 
     - name: Strip release binary (linux and macos)
       if: matrix.build == 'linux' || matrix.build == 'macos'
@@ -112,7 +126,6 @@ jobs:
       run: |
         staging="minos-${{ matrix.target }}"
         mkdir "$staging"
-        cp {minos/README.md} "$staging/"
         if [ "${{ matrix.build }}" = "windows" ]; then
           cp "target/${{ matrix.target }}/release/minos.exe" "$staging/"
           7z a "$staging.zip" "$staging"

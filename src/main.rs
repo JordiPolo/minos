@@ -17,9 +17,8 @@ mod validator;
 use log::debug;
 use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
 use std::time::Instant;
-
-
 use crate::service::Service;
+
 #[tokio::main]
 async fn main() {
     env_logger::init();
