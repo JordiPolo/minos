@@ -36,15 +36,16 @@ valico = "3"
 log = "0.4"
 env_logger = "0.7"
 http = "*"
-shellexpand = "1.0"
-itertools = "0.8"
-comfy-table = "0.0.6"
+shellexpand = "2.0"
+itertools = "0.9"
+comfy-table = "0.1.0"
 lazy_static = "*"
 tokio = { version = "0.2", features = ["full"] }
+#smauth-client = { path = "../mauth-client-rust"}
+hyper = "*"
 
 [patch.crates-io]
 openapiv3 = { git = "https://github.com/glademiller/openapiv3", branch = "master" }
-
 
 [profile.dev]
 debug = 0

@@ -18,6 +18,7 @@ pub mod param_mutation;
 mod params;
 mod string_type;
 
+
 #[derive(Debug, Clone)]
 pub struct Mutation {
     pub mutagen: instructions::MutagenInstruction,
@@ -101,6 +102,7 @@ impl Mutator {
         }
     }
 
+    // TODO: If no mutation is found for one of the required elements, print it out
     pub fn mutate<'a>(&self, endpoint: &'a Endpoint) -> Vec<Scenario<'a>> {
         let mutations = self.mutations_from_mutagen(&endpoint, instructions::mutagens());
         let query_mutations =
@@ -338,26 +340,22 @@ impl Mutator {
         }
 
         for instruction in instructions {
-            //  debug!("{:?}", instruction.request_part);
             // TODO: Add static value , do not belong to any part
             match instruction.request_part {
                 RequestPart::OptionalParam => {
                     for param in endpoint.method.optional_parameters() {
-                        if param.location_string() != "query" {
-                            continue;
-                        }
                         mutations.extend(self.param_proper_none(param, &instruction));
                     }
                 }
                 RequestPart::RequiredParam => {
                     for param in endpoint.method.required_parameters() {
-                        if param.location_string() != "query" {
-                            continue;
+                        if param.location_string() == "path" {
+                           continue; // A none mutation may create weird paths that by sheer luck may give 200
                         }
                         mutations.extend(self.param_proper_none(param, &instruction));
                     }
                 }
-                // TODO: Do stuff
+
                 RequestPart::AnyParam => {
                     for precalculated_variations in &improper {
                         for (param, mutagen) in precalculated_variations.to_params() {

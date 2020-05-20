@@ -22,7 +22,7 @@ pub fn mutate(param: &openapiv3::Parameter, known_params: &KnownParamCollection)
         return ParamMutation::new(&name);
     }
 
-    let more = match data.get_type() {
+    let typed_mutations = match data.get_type() {
         Type::Boolean {} => bool_type::mutate(&param),
         Type::Integer(the_type) => integer_type::mutate(&param, the_type),
         //Type::Number { .. } => {
@@ -33,6 +33,6 @@ pub fn mutate(param: &openapiv3::Parameter, known_params: &KnownParamCollection)
         Type::String(the_type) => string_type::mutate(&param, the_type),
         _ => ParamMutation::new("unknown"), //unimplemented!("Not this umproper"),
     };
-    mutations.extend(more);
+    mutations.extend(typed_mutations);
     mutations
 }

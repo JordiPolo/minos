@@ -64,6 +64,8 @@ fn proper_string_from_format(string_type: &openapiv3::StringType) -> Option<Stri
             if string == "uuid" {
                 // TODO: Use Conversions here and do proper thing
                 // We can't do a random uuid, as it will fail. None says we did not create a valid param
+                // TODO: This will end up creating a mutation without this
+                // But if the parameter was required, we want to not be able to create anything
                 None
             // let uuid = uuid::Uuid::new_v4();
             // RequestParam::new(&name, &format!("{:?}", uuid))
@@ -72,6 +74,8 @@ fn proper_string_from_format(string_type: &openapiv3::StringType) -> Option<Stri
             } else if string == "date-time" {
                 let date_time = Utc.ymd(2020, 1, 13).and_hms(12, 0, 9);
                 Some(format!("{:?}", date_time))
+            } else if string == "mdsol_uri" { // A format used by Medidata. Includes UUID. Use conversions
+                None
             } else {
                 Some(String::from("PLAIN_STRING_UNKNOWN"))
                 // TODO plain string

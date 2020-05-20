@@ -13,6 +13,7 @@ use log::{debug, info};
 use rand::Rng;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Method;
+//use mauth_client::*;
 
 #[derive(Debug)]
 pub struct Request {
@@ -163,15 +164,41 @@ impl Service {
         }
     }
 
+
+
     pub async fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
         let endpoint = request.url(&self.base_url, &self.base_path);
         info!("Sending request {:?}", request);
         debug!("Request headers {:?}", request.headers());
+
+
+        // Create http request
+        let mut builder = http::request::Builder::new();
+
+        let headers = builder.headers_mut().unwrap();
+         for (key, value) in request.headers().iter() {
+             headers.insert(key, value.clone());
+         }
+
+        let mut requ = builder.method(request.method())
+        .uri(endpoint)
+        .body(hyper::Body::from(""))
+        .unwrap();
+
+
+        // // Add mauth headers
+        // let mauth_info = MAuthInfo::from_default_file().await.expect("Mauth file missing");
+        // // on empy body we digest "" TODO: Support request bodies
+        // let (_, body_digest) = MAuthInfo::build_body_with_digest("".to_string());
+        // mauth_info.sign_request_v2(&mut requ, &body_digest);
+
+
+         //launch request as a request request wich implies copying, TODO: prevent copying
         let resp = self
-            .client
-            .request(request.method(), &endpoint)
-            .headers(request.headers())
-            .send().await?;
+        .client
+        .request(requ.method().clone(), reqwest::Url::parse(&requ.uri().to_string()).unwrap())
+        .headers(requ.headers().clone())
+        .send().await?;
 
         debug!("Response headers {:?}", resp.headers());
 

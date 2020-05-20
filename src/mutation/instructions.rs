@@ -34,7 +34,7 @@ impl fmt::Display for Mutagen {
             Mutagen::EndpointProperValues => f.write_str("contains the proper value"),
             Mutagen::None => f.write_str("not present"),
             Mutagen::PathProper => f.write_str("contains the proper path"),
-            Mutagen::ParamProper => f.write_str("contains the proper param"),
+            Mutagen::ParamProper => f.write_str("contains the proper additional param"),
             Mutagen::WrongPattern => f.write_str("does not follow the proper format"),
             Mutagen::PathRandom => f.write_str("contains a random path"),
             Mutagen::BelowMinimumLength => f.write_str("below the minimum length of the string"),
@@ -59,7 +59,7 @@ impl fmt::Display for Mutagen {
 #[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub enum RequestPart {
     Path,
-    AnyParam,
+    AnyParam, // Params can also be headers, cookies and paths
     RequiredParam,
     OptionalParam,
     Endpoint,
@@ -116,6 +116,7 @@ impl fmt::Display for MutagenInstruction {
     }
 }
 
+// TODO: allow multiple possible returns types because different possible valid implementations
 pub fn schema_mutagens() -> Vec<MutagenInstruction> {
     vec![
         (
