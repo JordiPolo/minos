@@ -414,8 +414,7 @@ impl Mutator {
         match mutagen {
             Mutagen::PathProper => {
                 if path.contains('}') {
-                    let conversion = self.known_params.find_by_path(path)?;
-                    Some(str::replace(path, &conversion.pattern, &conversion.value))
+                    self.known_params.retrieve_known_path(path)
                 } else {
                     Some(String::from(path))
                 }

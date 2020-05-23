@@ -66,9 +66,9 @@ impl Request {
     pub fn headers(&self) -> HeaderMap {
         let mut request_headers = HeaderMap::new();
         let mut rng = rand::thread_rng();
-        let trace_id = rng.gen::<u128>().to_string();
-        let span_id = rng.gen::<u64>().to_string();
-
+        let trace_id = format!("{:x}", rng.gen::<u128>());
+        let span_id = format!("{:x}", rng.gen::<u64>());
+// TODO: Verify apps receive and use thsese keys
         request_headers.insert("Accept", HeaderValue::from_static("application/json"));
         request_headers.insert("X-B3-Sampled", HeaderValue::from_static("0"));
         request_headers.insert("X-B3-TraceId", HeaderValue::from_str(&trace_id).unwrap());

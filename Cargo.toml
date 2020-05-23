@@ -28,7 +28,7 @@ termcolor = "1.0"
 uuid = { version = ">= 0.6", features = ["v4"] }
 rand = "0.7.0"
 chrono = "0.4"
-openapiv3 = "0.3.0"
+openapiv3 = "0.3.2"
 #openapi_utils = { path = "../../oasproxy/openapi_utils" }
 openapi_utils = "0.2"
 thiserror = "1.0"
@@ -41,11 +41,9 @@ itertools = "0.9"
 comfy-table = "0.1.0"
 lazy_static = "*"
 tokio = { version = "0.2", features = ["full"] }
-#smauth-client = { path = "../mauth-client-rust"}
+#mauth-client = { path = "../mauth-client-rust"}
 hyper = "*"
 
-[patch.crates-io]
-openapiv3 = { git = "https://github.com/glademiller/openapiv3", branch = "master" }
 
 [profile.dev]
 debug = 0
