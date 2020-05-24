@@ -2,7 +2,6 @@ use crate::mutation::{Mutagen, Mutation};
 use crate::request_param::RequestParam;
 use openapi_utils::ParameterExt;
 use crate::mutation::instructions::schema_mutagen;
-
 pub struct ParamMutation {
     pub variations: Vec<Mutation>,
     pub param: openapiv3::Parameter,

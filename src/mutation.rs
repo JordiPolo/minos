@@ -126,27 +126,23 @@ impl Mutator {
         &self,
         endpoint: &'a Endpoint,
         mutations: &[Mutation],
-        query_mutations: &[Mutation],
+        query_mutations: &Vec<Vec<Mutation>>,
     ) -> Vec<Scenario<'a>> {
         let mut scenarios = vec![];
         let mut query_params: Vec<Vec<&Mutation>> = Vec::new();
         let mut non_query_params: Vec<Vec<&Mutation>> = Vec::new();
 
         debug!("QM size {:?}", query_mutations.len());
-        // TODO: CLI param to do or not do crazy amount of combinations.
-        // Group by request part or parameter so later can do combinations
-        // group_by only works well on sorted vectors
-        for (_key, group) in &query_mutations
-            .iter()
-            .sorted_by(|a, b| {
+        // Each vector has the mutations for one parameter and we do not care about that order
+        // But we care that 200 is at the top so we order by expedted
+        for mutations_vec in query_mutations {
+            let sorted = mutations_vec.iter().sorted_by(|a, b| {
                 Ord::cmp(
-                    &a.payload, //param_value.as_ref().unwrap().name,
-                    &b.payload,//param_value.as_ref().unwrap().name,
+                    &a.mutagen.expected,
+                    &b.mutagen.expected,
                 )
-            })
-            .group_by(|elt| &elt.payload) //param_value.as_ref().unwrap().name)
-        {
-            query_params.push(group.collect());
+            });
+            query_params.push(sorted.collect());
         }
 
         for (_key, group) in &mutations
@@ -198,6 +194,8 @@ impl Mutator {
                     combinations.push(temp);
                 }
             }
+        } else {
+            println!("Could not find a passing scenario for {}. Consider adding information to the conversinons file", endpoint.path_name);
         }
 
         for combination in combinations {
@@ -328,7 +326,7 @@ impl Mutator {
     fn mutations_from_mutagen_query(
         &self,
         endpoint: &Endpoint
-    ) -> Vec<Mutation> {
+    ) -> Vec<Vec<Mutation>> {
         let mut params = Vec::new();
         params.extend(endpoint.method.optional_parameters());
         params.extend(endpoint.method.required_parameters());
@@ -339,7 +337,7 @@ impl Mutator {
             } else {
                 Some(params::mutate(&param, &self.known_params).variations)
             }}
-        ).flatten().collect()
+        ).collect()
     }
 
     fn mutations_from_mutagen(

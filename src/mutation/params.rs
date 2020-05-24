@@ -37,6 +37,5 @@ pub fn mutate(param: &openapiv3::Parameter, known_params: &KnownParamCollection)
         };
         mutations.extend(typed_mutations);
     }
-
     mutations
 }
