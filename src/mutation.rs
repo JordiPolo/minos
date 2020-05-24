@@ -329,20 +329,17 @@ impl Mutator {
         &self,
         endpoint: &Endpoint
     ) -> Vec<Mutation> {
-        let mut mutations = vec![];
         let mut params = Vec::new();
         params.extend(endpoint.method.optional_parameters());
         params.extend(endpoint.method.required_parameters());
 
-        for param in params {
+        params.iter().filter_map(|param| {
             if param.location_string() == "path" {
-                continue;
-            }
-            for (param, instruction) in params::mutate(&param, &self.known_params).to_params() {
-                mutations.push(Mutation::new_param(instruction.clone(), param))
-            }
-        }
-        mutations
+                None
+            } else {
+                Some(params::mutate(&param, &self.known_params).variations)
+            }}
+        ).flatten().collect()
     }
 
     fn mutations_from_mutagen(
