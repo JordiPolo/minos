@@ -8,7 +8,6 @@ use openapi_utils::{ParameterDataExt, ParameterExt};
 use openapiv3::Type;
 //use crate::request_param::RequestParam;
 
-
 /// TODO: How to make sure we generate for all the Mutagens?
 pub fn mutate(param: &openapiv3::Parameter, known_params: &KnownParamCollection) -> ParamMutation {
     let data = param.parameter_data();

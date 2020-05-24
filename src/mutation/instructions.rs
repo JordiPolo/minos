@@ -7,7 +7,7 @@ pub enum Mutagen {
     // Path mutagen
     PathProper,
     PathRandom, // No format, so should not be checked
-// TODO: PathImproper, merge it with params
+    // TODO: PathImproper, merge it with params
 
     // Query param mutagen
     ParamProper,
@@ -118,7 +118,10 @@ impl fmt::Display for MutagenInstruction {
 }
 
 pub fn schema_mutagen(mutagen: &Mutagen) -> Vec<MutagenInstruction> {
-    schema_mutagens().into_iter().filter(|instruction| instruction.mutagen == *mutagen).collect()
+    schema_mutagens()
+        .into_iter()
+        .filter(|instruction| instruction.mutagen == *mutagen)
+        .collect()
 }
 
 // TODO: allow multiple possible returns types because different possible valid implementations

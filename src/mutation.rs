@@ -36,10 +36,7 @@ impl Mutation {
             payload: MutationValue::Value(value),
         }
     }
-    pub fn new_param(
-        mutagen: instructions::MutagenInstruction,
-        value: RequestParam,
-    ) -> Self {
+    pub fn new_param(mutagen: instructions::MutagenInstruction, value: RequestParam) -> Self {
         Mutation {
             mutagen,
             payload: MutationValue::Param(value),
@@ -93,7 +90,7 @@ impl fmt::Display for Mutation {
                     write!(f, "  \"{}\"", param.name)?;
                 }
                 //     format!("{} {}", self.mutagen.request_part, param.name)
-            },
+            }
             MutationValue::Value(value) => {
                 write!(f, "  \"{}\"", value)?;
             }
@@ -116,8 +113,7 @@ impl Mutator {
     // TODO: If no mutation is found for one of the required elements, print it out
     pub fn mutate<'a>(&self, endpoint: &'a Endpoint) -> Vec<Scenario<'a>> {
         let mutations = self.mutations_from_mutagen(&endpoint, instructions::mutagens());
-        let query_mutations =
-            self.mutations_from_mutagen_query(&endpoint);
+        let query_mutations = self.mutations_from_mutagen_query(&endpoint);
         //        let body_mutations = self.mutations_from_mutagen_body(&endpoint, instructions::schema_mutagens());
         self.scenarios_from_mutations(&endpoint, &mutations, &query_mutations)
     }
@@ -136,12 +132,9 @@ impl Mutator {
         // Each vector has the mutations for one parameter and we do not care about that order
         // But we care that 200 is at the top so we order by expedted
         for mutations_vec in query_mutations {
-            let sorted = mutations_vec.iter().sorted_by(|a, b| {
-                Ord::cmp(
-                    &a.mutagen.expected,
-                    &b.mutagen.expected,
-                )
-            });
+            let sorted = mutations_vec
+                .iter()
+                .sorted_by(|a, b| Ord::cmp(&a.mutagen.expected, &b.mutagen.expected));
             query_params.push(sorted.collect());
         }
 
@@ -286,12 +279,8 @@ impl Mutator {
         let mut query_params = Vec::new();
         for mutation in mutations {
             match mutation.mutagen.request_part {
-                RequestPart::ContentType => {
-                    request = request.content_type(mutation.value())
-                }
-                RequestPart::Method => {
-                    request = request.set_method(mutation.value())
-                }
+                RequestPart::ContentType => request = request.content_type(mutation.value()),
+                RequestPart::Method => request = request.set_method(mutation.value()),
                 RequestPart::Path => request = request.path(mutation.value()),
                 RequestPart::AnyParam => query_params.push(mutation.param_value()),
                 _ => {} //unimplemented!("We do not know how to mutate this endpoint level item. {:?}", instruction.request_part),
@@ -323,21 +312,21 @@ impl Mutator {
 
     // }
 
-    fn mutations_from_mutagen_query(
-        &self,
-        endpoint: &Endpoint
-    ) -> Vec<Vec<Mutation>> {
+    fn mutations_from_mutagen_query(&self, endpoint: &Endpoint) -> Vec<Vec<Mutation>> {
         let mut params = Vec::new();
         params.extend(endpoint.method.optional_parameters());
         params.extend(endpoint.method.required_parameters());
 
-        params.iter().filter_map(|param| {
-            if param.location_string() == "path" {
-                None
-            } else {
-                Some(params::mutate(&param, &self.known_params).variations)
-            }}
-        ).collect()
+        params
+            .iter()
+            .filter_map(|param| {
+                if param.location_string() == "path" {
+                    None
+                } else {
+                    Some(params::mutate(&param, &self.known_params).variations)
+                }
+            })
+            .collect()
     }
 
     fn mutations_from_mutagen(

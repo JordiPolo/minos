@@ -17,7 +17,7 @@ impl RequestParam {
     pub fn new2(name: &str, value: Option<String>) -> Self {
         RequestParam {
             name: name.to_string(),
-            value
+            value,
         }
     }
 }
