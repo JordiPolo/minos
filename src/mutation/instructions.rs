@@ -6,7 +6,8 @@ pub enum Mutagen {
     EndpointProperValues,
     // Path mutagen
     PathProper,
-    PathRandom,
+    PathRandom, // No format, so should not be checked
+// TODO: PathImproper, merge it with params
 
     // Query param mutagen
     ParamProper,
@@ -116,6 +117,10 @@ impl fmt::Display for MutagenInstruction {
     }
 }
 
+pub fn schema_mutagen(mutagen: &Mutagen) -> Vec<MutagenInstruction> {
+    schema_mutagens().into_iter().filter(|instruction| instruction.mutagen == *mutagen).collect()
+}
+
 // TODO: allow multiple possible returns types because different possible valid implementations
 pub fn schema_mutagens() -> Vec<MutagenInstruction> {
     vec![
@@ -177,6 +182,11 @@ pub fn mutagens() -> Vec<MutagenInstruction> {
             Mutagen::PathRandom,
             StatusCode::NOT_FOUND,
         ),
+        // (
+        //     RequestPart::Path,
+        //     Mutagen::PathImproperFormat,
+        //     StatusCode::UNPROCESSABLE_ENTITY,
+        // ),
         (
             RequestPart::ContentType,
             Mutagen::Value(String::from("application/json")),

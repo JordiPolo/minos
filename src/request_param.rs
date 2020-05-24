@@ -1,5 +1,7 @@
 // This is the Spec Request param information and helper methods.
-#[derive(Debug, PartialEq, Clone)]
+// We want to be able to render the name of the parameter that we do send
+// On value: None the value is not serialized.
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
 pub struct RequestParam {
     pub name: String,
     pub value: Option<String>,
@@ -12,10 +14,10 @@ impl RequestParam {
             value: Some(value.to_string()),
         }
     }
-    pub fn new2(name: &str, value: Option<&str>) -> Self {
+    pub fn new2(name: &str, value: Option<String>) -> Self {
         RequestParam {
             name: name.to_string(),
-            value: value.map(|s| s.to_string()),
+            value
         }
     }
 }

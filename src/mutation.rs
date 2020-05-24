@@ -3,13 +3,13 @@ use crate::operation::Endpoint;
 use crate::request_param::RequestParam;
 use crate::scenario::Scenario;
 use crate::service::Request;
+use http::StatusCode;
 use instructions::{Mutagen, MutagenInstruction, RequestPart};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use log::debug;
 use openapi_utils::{OperationExt, ParameterExt};
 use std::cmp::Ordering;
-use http::StatusCode;
 
 mod bool_type;
 pub mod instructions;
@@ -18,30 +18,45 @@ pub mod param_mutation;
 mod params;
 mod string_type;
 
-
 #[derive(Debug, Clone)]
 pub struct Mutation {
     pub mutagen: instructions::MutagenInstruction,
-    value: Option<String>,
-    pub param_value: Option<RequestParam>,
+    payload: MutationValue,
+}
+#[derive(Debug, PartialEq, PartialOrd, Clone, Eq, Ord)]
+pub enum MutationValue {
+    Value(String),
+    Param(RequestParam),
 }
 
 impl Mutation {
     pub fn new(mutagen: instructions::MutagenInstruction, value: String) -> Self {
         Mutation {
             mutagen,
-            value: Some(value),
-            param_value: None,
+            payload: MutationValue::Value(value),
         }
     }
     pub fn new_param(
         mutagen: instructions::MutagenInstruction,
-        value: Option<RequestParam>,
+        value: RequestParam,
     ) -> Self {
         Mutation {
             mutagen,
-            value: None,
-            param_value: value,
+            payload: MutationValue::Param(value),
+        }
+    }
+    fn value(&self) -> String {
+        if let MutationValue::Value(value) = self.payload.clone() {
+            value
+        } else {
+            unreachable!("Trying to access a value but we have a parameter.")
+        }
+    }
+    fn param_value(&self) -> RequestParam {
+        if let MutationValue::Param(value) = self.payload.clone() {
+            value
+        } else {
+            unreachable!("Trying to access a value but we have a parameter.")
         }
     }
 }
@@ -70,24 +85,20 @@ impl fmt::Display for Mutation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "  -  {}", self.mutagen)?;
 
-        if let Some(value) = &self.value {
-            write!(f, "  \"{}\"", value)?;
-        } else {
-            let param = self.param_value.as_ref().unwrap();
-            if let Some(value) = &param.value {
-                write!(f, "  \"{}={}\"", param.name, value)?;
-            } else {
-                write!(f, "  \"{}\"", param.name)?;
+        match &self.payload {
+            MutationValue::Param(param) => {
+                if let Some(value) = &param.value {
+                    write!(f, "  \"{}={}\"", param.name, value)?;
+                } else {
+                    write!(f, "  \"{}\"", param.name)?;
+                }
+                //     format!("{} {}", self.mutagen.request_part, param.name)
+            },
+            MutationValue::Value(value) => {
+                write!(f, "  \"{}\"", value)?;
             }
-            //     format!("{} {}", self.mutagen.request_part, param.name)
         }
         Ok(())
-        // let p_value = self.param_value.as_ref().map(|v| v.value.as_ref().map(|v| v)).flatten();
-
-        // match p_value {
-        //     None => write!(f, "{} is {}", subject, self.mutagen.mutagen),
-        //     Some(v) => write!(f, "{} is {} {}", subject, self.mutagen.mutagen, v)
-        // }
     }
 }
 
@@ -106,7 +117,7 @@ impl Mutator {
     pub fn mutate<'a>(&self, endpoint: &'a Endpoint) -> Vec<Scenario<'a>> {
         let mutations = self.mutations_from_mutagen(&endpoint, instructions::mutagens());
         let query_mutations =
-            self.mutations_from_mutagen_query(&endpoint, instructions::schema_mutagens());
+            self.mutations_from_mutagen_query(&endpoint);
         //        let body_mutations = self.mutations_from_mutagen_body(&endpoint, instructions::schema_mutagens());
         self.scenarios_from_mutations(&endpoint, &mutations, &query_mutations)
     }
@@ -129,11 +140,11 @@ impl Mutator {
             .iter()
             .sorted_by(|a, b| {
                 Ord::cmp(
-                    &a.param_value.as_ref().unwrap().name,
-                    &b.param_value.as_ref().unwrap().name,
+                    &a.payload, //param_value.as_ref().unwrap().name,
+                    &b.payload,//param_value.as_ref().unwrap().name,
                 )
             })
-            .group_by(|elt| &elt.param_value.as_ref().unwrap().name)
+            .group_by(|elt| &elt.payload) //param_value.as_ref().unwrap().name)
         {
             query_params.push(group.collect());
         }
@@ -145,7 +156,6 @@ impl Mutator {
         {
             non_query_params.push(group.collect());
         }
-
 
         let mut combinations = Vec::new();
 
@@ -160,22 +170,27 @@ impl Mutator {
         }
 
         // If any error here that means we can't combine that category
-        let really_all_good = all_good.iter().all(|&m| m.mutagen.expected == StatusCode::OK);//.count();
+        let really_all_good = all_good
+            .iter()
+            .all(|&m| m.mutagen.expected == StatusCode::OK); //.count();
 
         combinations.push(all_good);
 
         // If we can't do anything in one of the categories, there is no point of creating combinations
         // All of them with the same failing guy.
         if really_all_good {
-            for i in 0..total.len() { //each category
-                for j in 1..total[i].len() { //each value in a category
+            for i in 0..total.len() {
+                //each category
+                for j in 1..total[i].len() {
+                    //each value in a category
                     //Start from 1 becase we will be choosing the element 0 in inner loop
                     // If we do 0 here we will choose again and again the top elements.
                     let mut temp = Vec::new();
-                    for z in 0..total.len() { // now we transverse the thing to get one from each
+                    for z in 0..total.len() {
+                        // now we transverse the thing to get one from each
                         if i == z {
                             temp.push(total[z][j]);
-                            //continue;
+                        //continue;
                         } else {
                             temp.push(total[z][0]);
                         }
@@ -186,7 +201,10 @@ impl Mutator {
         }
 
         for combination in combinations {
-            let erroring = combination.iter().filter(|&m| m.mutagen.expected != StatusCode::OK).count();
+            let erroring = combination
+                .iter()
+                .filter(|&m| m.mutagen.expected != StatusCode::OK)
+                .count();
             if erroring > 1 {
                 continue;
             }
@@ -271,32 +289,18 @@ impl Mutator {
         for mutation in mutations {
             match mutation.mutagen.request_part {
                 RequestPart::ContentType => {
-                    request = request.content_type(mutation.value.clone().unwrap())
+                    request = request.content_type(mutation.value())
                 }
                 RequestPart::Method => {
-                    request = request.set_method(mutation.value.clone().unwrap())
+                    request = request.set_method(mutation.value())
                 }
-                RequestPart::Path => request = request.path(mutation.value.clone().unwrap()),
-                RequestPart::AnyParam => query_params.push(mutation.param_value.clone().unwrap()),
+                RequestPart::Path => request = request.path(mutation.value()),
+                RequestPart::AnyParam => query_params.push(mutation.param_value()),
                 _ => {} //unimplemented!("We do not know how to mutate this endpoint level item. {:?}", instruction.request_part),
             }
         }
         request = request.query_params(query_params);
         request
-    }
-
-    fn param_proper_none(
-        &self,
-        param: &openapiv3::Parameter,
-        instruction: &MutagenInstruction,
-    ) -> Option<Mutation> {
-        match instruction.mutagen.clone() {
-            Mutagen::None => Some(Mutation::new_param(
-                instruction.clone(),
-                Some(RequestParam::new2(param.name(), None)),
-            )),
-            _ => unimplemented!("This optional/required param mutagen is not implemented!"),
-        }
     }
 
     // fn mutations_from_mutagen_body(
@@ -323,50 +327,19 @@ impl Mutator {
 
     fn mutations_from_mutagen_query(
         &self,
-        endpoint: &Endpoint,
-        instructions: Vec<MutagenInstruction>,
+        endpoint: &Endpoint
     ) -> Vec<Mutation> {
         let mut mutations = vec![];
         let mut params = Vec::new();
         params.extend(endpoint.method.optional_parameters());
         params.extend(endpoint.method.required_parameters());
 
-        let mut improper = Vec::new();
-        for param in &params {
-            if param.location_string() != "query" {
+        for param in params {
+            if param.location_string() == "path" {
                 continue;
             }
-            improper.push(params::mutate(&param, &self.known_params));
-        }
-
-        for instruction in instructions {
-            // TODO: Add static value , do not belong to any part
-            match instruction.request_part {
-                RequestPart::OptionalParam => {
-                    for param in endpoint.method.optional_parameters() {
-                        mutations.extend(self.param_proper_none(param, &instruction));
-                    }
-                }
-                RequestPart::RequiredParam => {
-                    for param in endpoint.method.required_parameters() {
-                        if param.location_string() == "path" {
-                           continue; // A none mutation may create weird paths that by sheer luck may give 200
-                        }
-                        mutations.extend(self.param_proper_none(param, &instruction));
-                    }
-                }
-
-                RequestPart::AnyParam => {
-                    for precalculated_variations in &improper {
-                        for (param, mutagen) in precalculated_variations.to_params() {
-                            if mutagen == instruction.mutagen {
-                                mutations
-                                    .push(Mutation::new_param(instruction.clone(), Some(param)));
-                            }
-                        }
-                    }
-                }
-                _ => unreachable!(),
+            for (param, instruction) in params::mutate(&param, &self.known_params).to_params() {
+                mutations.push(Mutation::new_param(instruction.clone(), param))
             }
         }
         mutations

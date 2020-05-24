@@ -1,16 +1,18 @@
-use crate::mutation::Mutagen;
+use crate::mutation::{Mutagen, MutagenInstruction};
 use crate::request_param::RequestParam;
 use openapi_utils::ParameterExt;
+use crate::mutation::instructions::schema_mutagen;
+//use crate::mutation::Mutation;
 
 pub struct ParamVariation {
-    value: String,
-    mutagen: Mutagen,
+    value: Option<String>,
+    mutagen: MutagenInstruction,
 }
 
 impl ParamVariation {
-    pub fn new(value: &str, mutagen: Mutagen) -> Self {
+    pub fn new(value: Option<String>, mutagen: MutagenInstruction) -> Self {
         ParamVariation {
-            value: String::from(value),
+            value,
             mutagen,
         }
     }
@@ -18,36 +20,37 @@ impl ParamVariation {
 
 pub struct ParamMutation {
     variations: Vec<ParamVariation>,
-    name: String,
+    pub param: openapiv3::Parameter,
 }
 
 impl ParamMutation {
-    pub fn to_params(&self) -> Vec<(RequestParam, Mutagen)> {
+    pub fn to_params(&self) -> Vec<(RequestParam, MutagenInstruction)> {
         self.variations
             .iter()
             .map(|variation| {
                 (
-                    RequestParam::new(&self.name, &variation.value),
+                    RequestParam::new2(&self.param.parameter_data().name, variation.value.clone()),
                     variation.mutagen.clone(),
                 )
             })
             .collect()
     }
-    pub fn new(name: &str) -> Self {
-        ParamMutation {
-            variations: vec![],
-            name: String::from(name),
-        }
-    }
 
     pub fn new_param(param: &openapiv3::Parameter) -> Self {
         ParamMutation {
             variations: vec![],
-            name: String::from(&param.parameter_data().name),
+            param: param.clone(),
         }
     }
     pub fn push(&mut self, value: &str, mutagen: Mutagen) {
-        self.variations.push(ParamVariation::new(value, mutagen));
+        let instruction = schema_mutagen(&mutagen)[0].clone();
+        self.variations.push(ParamVariation::new(Some(value.to_string()), instruction));
+    }
+    pub fn push_multiple(&mut self, value: Option<String>, mutagen: Mutagen) {
+        let instructions = schema_mutagen(&mutagen);
+        for instruction in instructions {
+            self.variations.push(ParamVariation::new(value.clone(), instruction));
+        }
     }
     pub fn extend(&mut self, other: Self) {
         self.variations.extend(other.variations);

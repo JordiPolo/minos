@@ -1,5 +1,3 @@
-use reqwest;
-
 use std::{
     fmt,
     process::{Child, Command},
@@ -165,7 +163,7 @@ impl Service {
     }
 
 
-
+// TODO: when network does not find the address this is blocking the thread
     pub async fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
         let endpoint = request.url(&self.base_url, &self.base_path);
         info!("Sending request {:?}", request);
@@ -181,9 +179,9 @@ impl Service {
          }
 
         let mut requ = builder.method(request.method())
-        .uri(endpoint)
+        .uri(&endpoint)
         .body(hyper::Body::from(""))
-        .unwrap();
+        .expect(&format!("{:?} is not a valid URL. Check the base URL.", &endpoint));
 
 
         // // Add mauth headers

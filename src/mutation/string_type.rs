@@ -74,7 +74,8 @@ fn proper_string_from_format(string_type: &openapiv3::StringType) -> Option<Stri
             } else if string == "date-time" {
                 let date_time = Utc.ymd(2020, 1, 13).and_hms(12, 0, 9);
                 Some(format!("{:?}", date_time))
-            } else if string == "mdsol_uri" { // A format used by Medidata. Includes UUID. Use conversions
+            } else if string == "mdsol_uri" {
+                // A format used by Medidata. Includes UUID. Use conversions
                 None
             } else {
                 Some(String::from("PLAIN_STRING_UNKNOWN"))
