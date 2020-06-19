@@ -7,8 +7,9 @@ pub fn mutate(param: &openapiv3::Parameter, the_type: &openapiv3::IntegerType) -
     let (min, max) = the_type.min_max();
     let avg = max / 2; //(min + max) / 2; if max is max of i64 this will overflow
 
-    if param.parameter_data().name == "page" {
+    if param.parameter_data().name == "page" || param.parameter_data().name == "per_page" {
         mutations.push("1", Mutagen::ParamProper);
+        return mutations; // These pagination params are resilient to erros, using default if passing wrong params
     } else {
         mutations.push(&avg.to_string(), Mutagen::ParamProper);
     }

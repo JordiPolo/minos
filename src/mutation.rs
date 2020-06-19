@@ -43,17 +43,15 @@ impl Mutation {
         }
     }
     fn value(&self) -> String {
-        if let MutationValue::Value(value) = self.payload.clone() {
-            value
-        } else {
-            unreachable!("Trying to access a value but we have a parameter.")
+        match self.payload.clone() {
+            MutationValue::Value(value) => value,
+            MutationValue::Param(_) => unreachable!("Trying to access a param but we have a value.")
         }
     }
     fn param_value(&self) -> RequestParam {
-        if let MutationValue::Param(value) = self.payload.clone() {
-            value
-        } else {
-            unreachable!("Trying to access a value but we have a parameter.")
+        match self.payload.clone() {
+            MutationValue::Param(param) => param,
+            MutationValue::Value(_) => unreachable!("Trying to access a value but we have a parameter.")
         }
     }
 }

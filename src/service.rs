@@ -184,7 +184,7 @@ impl Service {
         .expect(&format!("{:?} is not a valid URL. Check the base URL.", &endpoint));
 
 
-        // // Add mauth headers
+        // Add mauth headers
         // let mauth_info = MAuthInfo::from_default_file().await.expect("Mauth file missing");
         // // on empy body we digest "" TODO: Support request bodies
         // let (_, body_digest) = MAuthInfo::build_body_with_digest("".to_string());

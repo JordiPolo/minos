@@ -26,6 +26,12 @@ pub fn validate(
             )))
         }
         Some(content_type) => {
+            // If we expect the server does not have an acceptable media type
+            // We don't know what we will get, as that's up to the implementation to how
+            // they send the error. Also it will probably not be json, can't verify body
+            if expectation.status_code == StatusCode::NOT_ACCEPTABLE {
+                return Ok(())
+            }
             // Some servers respond adding the charset to application json which is incorrect
             // but let's be lenient for now
             if !(content_type.contains(&expectation.content_type)) {

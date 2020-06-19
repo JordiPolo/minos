@@ -12,12 +12,17 @@ pub fn mutate(param: &openapiv3::Parameter, string_type: &openapiv3::StringType)
     // mutations.push(&long_string, Mutagen::HugelyLongString);
 
     if !string_type.enumeration.is_empty() {
-        for element in &string_type.enumeration {
-            mutations.push(&element, Mutagen::EnumerationElement);
-            if !element.chars().all(char::is_uppercase) {
-                mutations.push(&element.to_uppercase(), Mutagen::NotEnumerationElement);
-            }
+        let a_value = string_type.enumeration[0].clone();
+        if !a_value.chars().all(char::is_uppercase) {
+            mutations.push(&a_value.to_uppercase(), Mutagen::NotEnumerationElement);
         }
+        // Below if we want to check each value is managed
+        // for element in &string_type.enumeration {
+        //     mutations.push(&element, Mutagen::EnumerationElement);
+        //     if !element.chars().all(char::is_uppercase) {
+        //         mutations.push(&element.to_uppercase(), Mutagen::NotEnumerationElement);
+        //     }
+        // }
         mutations.push("", Mutagen::NotEnumerationElement);
         mutations.push("NotInAnyEnum", Mutagen::NotEnumerationElement);
     } else if string_type.format == openapiv3::VariantOrUnknownOrEmpty::Empty {

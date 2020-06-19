@@ -1,5 +1,6 @@
 use crate::request_param::RequestParam;
 use reqwest::StatusCode;
+use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Mutagen {
@@ -28,6 +29,7 @@ pub enum Mutagen {
     // EmptyString,
     // HugelyLongString,
 }
+
 
 impl fmt::Display for Mutagen {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -67,7 +69,6 @@ pub enum RequestPart {
     Method,
     ContentType,
 }
-use std::fmt;
 
 impl fmt::Display for RequestPart {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -117,6 +118,7 @@ impl fmt::Display for MutagenInstruction {
     }
 }
 
+// TODO: Calling this repeately is very inefficient
 pub fn schema_mutagen(mutagen: &Mutagen) -> Vec<MutagenInstruction> {
     schema_mutagens()
         .into_iter()
@@ -125,7 +127,7 @@ pub fn schema_mutagen(mutagen: &Mutagen) -> Vec<MutagenInstruction> {
 }
 
 // TODO: allow multiple possible returns types because different possible valid implementations
-pub fn schema_mutagens() -> Vec<MutagenInstruction> {
+fn schema_mutagens() -> Vec<MutagenInstruction> {
     vec![
         (
             RequestPart::AnyParam,
@@ -174,11 +176,11 @@ pub fn mutagens() -> Vec<MutagenInstruction> {
             Mutagen::EndpointProperValues,
             StatusCode::OK,
         ),
-        (
-            RequestPart::Method,
-            Mutagen::Value(String::from("TRACE")),
-            StatusCode::METHOD_NOT_ALLOWED,
-        ),
+        // (
+        //     RequestPart::Method,
+        //     Mutagen::Value(String::from("TRACE")),
+        //     StatusCode::METHOD_NOT_ALLOWED,
+        // ),
         (RequestPart::Path, Mutagen::PathProper, StatusCode::OK),
         (
             RequestPart::Path,
