@@ -194,7 +194,8 @@ impl Mutator {
                 .iter()
                 .filter(|&m| m.mutagen.expected != StatusCode::OK)
                 .count();
-            if erroring > 1 {
+            // Change to > 1 to allow erroring cases
+            if erroring > 0 {
                 continue;
             }
 

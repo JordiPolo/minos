@@ -16,6 +16,7 @@ pub fn mutate(param: &openapiv3::Parameter, known_params: &KnownParamCollection)
 
     if known_params.param_known(&data.name) {
         mutations.push(&known_params.param_value(&data.name), Mutagen::ParamProper);
+        return mutations; //TODO: This is good when we want only the mutations returning 200, not general case
     }
 
     if !data.is_type_defined() {

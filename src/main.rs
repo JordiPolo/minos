@@ -7,6 +7,7 @@ mod error;
 mod known_param;
 mod mutation;
 mod operation;
+mod performance;
 mod reporter;
 mod request_param;
 mod scenario;
@@ -19,33 +20,14 @@ use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
 use std::time::Instant;
 use crate::service::Service;
 
-#[tokio::main]
-async fn main() {
-    env_logger::init();
 
-    let config = cli_args::config();
-    let spec = spec::read(&config.filename).deref_all();
+async fn run_testing_scenarios(scenarios: &Vec<scenario::Scenario<'_>>, config: &cli_args::CLIArgs, spec: &openapiv3::OpenAPI) -> Vec<(String, bool)> {
     let service = Service::new(&config, spec.servers[0].base_path());
-    let mutator = mutation::Mutator::new(&config.conv_filename);
     let mut results = Vec::new();
-
-    let start = Instant::now();
-
-    // Create endpoints from the spec file.
-    let endpoints: Vec<operation::Endpoint> = spec
-        .paths
-        .iter()
-        .filter(|p| p.0.contains(&config.matches))
-        .flat_map(|(path_name, methods)| {
-            operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
-        })
-        .collect();
-
-    let scenarios  = endpoints.iter()
-        .flat_map(|e| mutator.mutate(e));
 
     for scenario in scenarios {
         let path = scenario.endpoint.path_name.clone();
+        println!("{:?}", scenario.request.to_string());
 
         reporter::print_mutation_scenario(&scenario);
         if config.dry_run {
@@ -82,6 +64,37 @@ async fn main() {
         }
         println!();
     }
-
-    reporter::run_summary(&results, start);
+    results
 }
+
+
+fn main() {
+    env_logger::init();
+    let config = cli_args::config();
+    let spec = spec::read(&config.filename).deref_all();
+    let mutator = mutation::Mutator::new(&config.conv_filename);
+    let service = Service::new(&config, spec.servers[0].base_path());
+
+    // Create endpoints from the spec file.
+    let endpoints: Vec<operation::Endpoint> = spec
+        .paths
+        .iter()
+        .filter(|p| p.0.contains(&config.matches))
+        .flat_map(|(path_name, methods)| {
+            operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
+        })
+        .collect();
+
+    let scenarios  = endpoints.iter()
+        .flat_map(|e| mutator.mutate(e));
+
+    if config.hammer_it {
+        performance::run(&scenarios.collect(), &service, &config)
+    } else {
+        let mut rt = tokio::runtime::Runtime::new().unwrap();
+        let start = Instant::now();
+        let results = rt.block_on(run_testing_scenarios(&scenarios.collect(), &config, &spec));
+        reporter::run_summary(&results, start);
+    }
+}
+

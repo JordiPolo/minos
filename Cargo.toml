@@ -43,6 +43,7 @@ lazy_static = "*"
 tokio = { version = "0.2", features = ["full"] }
 #mauth-client = { path = "../mauth-client-rust"}
 hyper = "*"
+goose = "^0.8"
 
 
 [profile.dev]

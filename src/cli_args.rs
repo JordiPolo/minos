@@ -19,7 +19,7 @@ pub struct CLIArgs {
     pub filename: String,
 
     #[structopt(
-        short = "url",
+        short = "u",
         long = "url",
         help = "URL where the server is running (it can also be in localhost)",
         default_value = "http://localhost:3000"
@@ -48,6 +48,29 @@ pub struct CLIArgs {
     )]
     pub allow_missing_rs: bool,
 
+    // TODO: this to do something, right now hardcoded to only passing
+    #[structopt(
+        short = "op",
+        long = "only-passing",
+        help = "Only run scenarios that expect success response codes."
+    )]
+    pub only_passing_scenarios: bool,
+
+
+    #[structopt(
+        short = "hi",
+        long = "hammer-it",
+        help = "run scenarios as performance suite."
+    )]
+    pub hammer_it: bool,
+
+    #[structopt(
+        short = "t",
+        long = "threads",
+        help = "Number of users(threads) running the performance suite."
+    )]
+    pub users: usize,
+
     #[structopt(
         short = "m",
         long = "matches",
@@ -65,7 +88,7 @@ pub struct CLIArgs {
     pub server_command: String,
 
     #[structopt(
-        short = "t",
+        short = "it",
         long = "timeout",
         help = "Timeout allowed for the service to startup",
         default_value = "10"

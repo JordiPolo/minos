@@ -162,9 +162,7 @@ impl Service {
         }
     }
 
-
-// TODO: when network does not find the address this is blocking the thread
-    pub async fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
+    pub fn build_hyper_request(&self, request: &Request) -> http::request::Request<hyper::Body> {
         let endpoint = request.url(&self.base_url, &self.base_path);
         info!("Sending request {:?}", request);
         debug!("Request headers {:?}", request.headers());
@@ -184,12 +182,18 @@ impl Service {
         .expect(&format!("{:?} is not a valid URL. Check the base URL.", &endpoint));
 
 
+        // TODO: Do not re-read the file multiple times
         // Add mauth headers
-        // let mauth_info = MAuthInfo::from_default_file().await.expect("Mauth file missing");
+        // let mauth_info = MAuthInfo::from_default_file().expect("Mauth file missing");
         // // on empy body we digest "" TODO: Support request bodies
         // let (_, body_digest) = MAuthInfo::build_body_with_digest("".to_string());
         // mauth_info.sign_request_v2(&mut requ, &body_digest);
+        requ
+    }
 
+// TODO: when network does not find the address this is blocking the thread
+    pub async fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
+        let requ = self.build_hyper_request(request);
 
          //launch request as a request request wich implies copying, TODO: prevent copying
         let resp = self
@@ -208,8 +212,6 @@ impl Service {
             )
         });
         let body = resp.text().await?;
-
-
 
         Ok(ServiceResponse {
             status,
