@@ -1,8 +1,5 @@
 use std::{
     fmt,
-    process::{Child, Command},
-    thread::sleep,
-    time::Duration,
 };
 
 use crate::cli_args::*;
@@ -115,7 +112,6 @@ impl fmt::Display for Request {
 pub struct Service {
     base_url: String,
     base_path: String,
-    server: Option<Child>,
     client: reqwest::Client, //reqwest::blocking::Client,
 }
 
@@ -125,39 +121,13 @@ pub struct ServiceResponse {
     pub content_type: Option<String>,
 }
 
-impl Drop for Service {
-    fn drop(&mut self) {
-        if let Some(server) = self.server.as_mut() {
-            server
-                .kill()
-                .expect("Service could not be killed, maybe it was not running (crashed?)");
-        }
-    }
-}
-
 impl Service {
     pub fn new(config: &CLIArgs, base_path: String) -> Self {
-        let server_command: Vec<&str> = config.server_command.split(' ').collect();
-        let (command, arguments) = server_command.split_at(1);
-
-        let server = if config.server_run {
-            let server = Command::new(command[0])
-                .args(arguments)
-                .spawn()
-                .expect("failed to execute the server.");
-            println!("Starting server. Waiting {:?} seconds", &config.server_wait);
-            sleep(Duration::from_millis(config.server_wait * 1000));
-            Some(server)
-        } else {
-            None
-        };
-        //    let server = None;
 
         let client = reqwest::Client::new();
         Service {
             base_url: config.base_url.clone(),
             base_path,
-            server,
             client,
         }
     }

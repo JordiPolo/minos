@@ -79,22 +79,4 @@ pub struct CLIArgs {
     )]
     pub matches: String,
 
-    #[structopt(
-        short = "s",
-        long = "server",
-        help = "Command to use to launch server",
-        default_value = "bundle exec rails server"
-    )]
-    pub server_command: String,
-
-    #[structopt(
-        short = "it",
-        long = "timeout",
-        help = "Timeout allowed for the service to startup",
-        default_value = "10"
-    )]
-    pub server_wait: u64,
-
-    #[structopt(long = "run_server", help = "Runs the server itself or not")]
-    pub server_run: bool,
 }

@@ -20,7 +20,7 @@ pub fn run(scenarios: &Vec<scenario::Scenario<'_>>, service: &service::Service, 
     configuration.reset_stats = true; // Stats reset after hatching is completed so only count final 1 minute
     configuration.status_codes = false; // Add or not stats about status codes
     configuration.log_file = "/tmp/minos_performance".to_string();
-    configuration.host = config.base_url.clone(); // TODO: probably this is unneeded as get urls from service
+    configuration.host = config.base_url.clone(); // Goose needs this even if we overwrite urls later
     let goose_attack = GooseAttack::initialize_with_config(configuration).setup();
 
     { // Need to drop the rwlock after this block so we can read it
