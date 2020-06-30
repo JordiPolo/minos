@@ -54,17 +54,12 @@ pub struct CLIArgs {
     pub command: Command,
 }
 
-
 #[derive(StructOpt)]
 pub enum Command {
-    #[structopt(
-        about = "Shows generated scenarios but does not run them."
-    )]
+    #[structopt(about = "Shows generated scenarios but does not run them.")]
     Ls,
 
-    #[structopt(
-        about = "Runs auto-genenerated scenarios as performance tests."
-    )]
+    #[structopt(about = "Runs auto-genenerated scenarios as performance tests.")]
     Performance {
         #[structopt(
             short = "t",
@@ -86,4 +81,4 @@ pub enum Command {
         )]
         allow_missing_rs: bool,
     },
- }
+}

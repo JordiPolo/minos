@@ -22,7 +22,12 @@ impl ParamMutation {
     }
     pub fn push_multiple(&mut self, value: Option<String>, mutagen: Mutagen, required: bool) {
         let instructions = schema_mutagen(&mutagen);
-        let instruction = instructions.into_iter().find(|instruction| (instruction.request_part == RequestPart::RequiredParam) == required).unwrap();
+        let instruction = instructions
+            .into_iter()
+            .find(|instruction| {
+                (instruction.request_part == RequestPart::RequiredParam) == required
+            })
+            .unwrap();
         let param = RequestParam::new2(&self.param.parameter_data().name, value.clone());
         self.variations
             .push(Mutation::new_param(instruction, param));

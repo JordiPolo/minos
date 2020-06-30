@@ -45,13 +45,17 @@ impl Mutation {
     fn value(&self) -> String {
         match self.payload.clone() {
             MutationValue::Value(value) => value,
-            MutationValue::Param(_) => unreachable!("Trying to access a param but we have a value.")
+            MutationValue::Param(_) => {
+                unreachable!("Trying to access a param but we have a value.")
+            }
         }
     }
     fn param_value(&self) -> RequestParam {
         match self.payload.clone() {
             MutationValue::Param(param) => param,
-            MutationValue::Value(_) => unreachable!("Trying to access a value but we have a parameter.")
+            MutationValue::Value(_) => {
+                unreachable!("Trying to access a value but we have a parameter.")
+            }
         }
     }
 }
@@ -193,11 +197,7 @@ impl Mutator {
 
         // Run all codes means we let 1 error per scenario.
         // We never want more than one error per scenario or we will not know what status code should be out there
-        let error_limit = if self.run_all_codes {
-            1
-        } else {
-            0
-        };
+        let error_limit = if self.run_all_codes { 1 } else { 0 };
 
         for combination in combinations {
             let erroring = combination

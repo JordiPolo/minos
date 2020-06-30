@@ -8,7 +8,11 @@ use openapi_utils::{ParameterDataExt, ParameterExt};
 use openapiv3::Type;
 
 /// TODO: How to make sure we generate for all the Mutagens?
-pub fn mutate(param: &openapiv3::Parameter, known_params: &KnownParamCollection, run_all_scenarios: bool) -> ParamMutation {
+pub fn mutate(
+    param: &openapiv3::Parameter,
+    known_params: &KnownParamCollection,
+    run_all_scenarios: bool,
+) -> ParamMutation {
     let data = param.parameter_data();
     let mut mutations = ParamMutation::new_param(param);
 

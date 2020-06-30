@@ -30,7 +30,7 @@ pub fn validate(
             // We don't know what we will get, as that's up to the implementation to how
             // they send the error. Also it will probably not be json, can't verify body
             if expectation.status_code == StatusCode::NOT_ACCEPTABLE {
-                return Ok(())
+                return Ok(());
             }
             // Some servers respond adding the charset to application json which is incorrect
             // but let's be lenient for now

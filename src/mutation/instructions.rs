@@ -30,7 +30,6 @@ pub enum Mutagen {
     // HugelyLongString,
 }
 
-
 impl fmt::Display for Mutagen {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
