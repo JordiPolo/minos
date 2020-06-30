@@ -67,9 +67,9 @@ pub enum Command {
     )]
     Performance {
         #[structopt(
-            short = "u",
-            long = "users",
-            help = "Number of users running the performance suite.",
+            short = "t",
+            long = "threads",
+            help = "Number of threads(users) running the performance suite.",
             default_value = "8"
         )]
         users: usize,
@@ -80,7 +80,7 @@ pub enum Command {
     )]
     Verify {
         #[structopt(
-            short = "amrs",
+            short = "n",
             long = "allow-missing-rs",
             help = "Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses."
         )]

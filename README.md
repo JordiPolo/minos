@@ -24,18 +24,18 @@ minos ls
 
 To run the scenarios as a test suite:
 ```
-minos verify -a
+minos verify -n
 ```
 
-`-a` will instruct Minos to allow errors codes to not have strict schemas.
+`-n` will instruct Minos to allow errors codes to not have strict schemas.
 
 
 To run the scenarios as a performace suite:
 ```
-minos performance -u 16
+minos performance -t 16
 ```
 
-`-u 16` will instruct Minos to launch the load of 16 users simultaneously
+`-t 16` will instruct Minos to launch the load of 16 users simultaneously
 
 
 Additionally, you can setup any command with the following common options:
@@ -58,9 +58,9 @@ Let's just check the scenarios we get for this huge file. Only interested on pat
 ./minos -a -f=huge_service/api_definition/openapi.yaml -m=users ls
 ```
 
-Looks good, let's run the whole thing against local:
+Looks good, let's run the whole thing against local. Our openapi file does not have schemas for errors:
 ```
-./minos -a -f=huge_service/api_definition/openapi.yaml -u=http://localhost:9090 verify
+./minos -a -f=huge_service/api_definition/openapi.yaml -u=http://localhost:9090 verify -n
 ```
 
 Now let's see how good is our performance, let's not use `-a` to avoid measuring the performance of errors:
