@@ -95,9 +95,9 @@ jobs:
     #     echo "::set-env name=CARGO::cross"
     #     echo "::set-env name=TARGET_FLAGS::--target ${{ matrix.target }}"
 
-    - name: Install musl-gcc for backtrace-sys
+    - name: Install musl-gcc for backtrace-sys and openssl dev not sure why.
       if: matrix.build == 'linux'
-      run: sudo apt-get install musl-tools
+      run: sudo apt-get install musl-tools  pkg-config libssl-dev
 
     - name: Set TARGET flags
       run: echo "::set-env name=TARGET_FLAGS::--target ${{ matrix.target }}"
