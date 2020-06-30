@@ -4,7 +4,7 @@ pub fn config() -> CLIArgs {
     CLIArgs::from_args()
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt)]
 #[structopt(
     name = "Minos",
     about = "Minos tests that your OpenAPI file matches your live API."
@@ -35,48 +35,55 @@ pub struct CLIArgs {
     pub conv_filename: String,
 
     #[structopt(
-        short = "d",
-        long = "dry-run",
-        help = "In dryrun mode minos creates the scenarios but does not execute them against the server."
-    )]
-    pub dry_run: bool,
-
-    #[structopt(
-        short = "amrs",
-        long = "allow-missing-rs",
-        help = "Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses."
-    )]
-    pub allow_missing_rs: bool,
-
-    // TODO: this to do something, right now hardcoded to only passing
-    #[structopt(
-        short = "op",
-        long = "only-passing",
-        help = "Only run scenarios that expect success response codes."
-    )]
-    pub only_passing_scenarios: bool,
-
-
-    #[structopt(
-        short = "hi",
-        long = "hammer-it",
-        help = "run scenarios as performance suite."
-    )]
-    pub hammer_it: bool,
-
-    #[structopt(
-        short = "t",
-        long = "threads",
-        help = "Number of users(threads) running the performance suite."
-    )]
-    pub users: usize,
-
-    #[structopt(
         short = "m",
         long = "matches",
-        help = "Only run on paths matching certain paths.",
+        help = "Only generate scenarios for paths matching certain expression.",
         default_value = "/"
     )]
     pub matches: String,
 
+    // TODO: this to do something, right now hardcoded to only 200 code
+    #[structopt(
+        short = "a",
+        long = "all-codes",
+        help = "Generate scenarios for all codes. Default is to generate only scenarios with 200 codes."
+    )]
+    pub scenarios_all_codes: bool,
+
+    #[structopt(subcommand)]
+    pub command: Command,
 }
+
+
+#[derive(StructOpt)]
+pub enum Command {
+    #[structopt(
+        about = "Shows generated scenarios but does not run them."
+    )]
+    Ls,
+
+    #[structopt(
+        about = "Runs auto-genenerated scenarios as performance tests."
+    )]
+    Performance {
+        #[structopt(
+            short = "u",
+            long = "users",
+            help = "Number of users running the performance suite.",
+            default_value = "8"
+        )]
+        users: usize,
+    },
+
+    #[structopt(
+        about = "Runs auto-generated scenarios to verify the service follows the openapi contract"
+    )]
+    Verify {
+        #[structopt(
+            short = "amrs",
+            long = "allow-missing-rs",
+            help = "Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses."
+        )]
+        allow_missing_rs: bool,
+    },
+ }

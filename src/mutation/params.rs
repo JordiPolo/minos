@@ -8,7 +8,7 @@ use openapi_utils::{ParameterDataExt, ParameterExt};
 use openapiv3::Type;
 
 /// TODO: How to make sure we generate for all the Mutagens?
-pub fn mutate(param: &openapiv3::Parameter, known_params: &KnownParamCollection) -> ParamMutation {
+pub fn mutate(param: &openapiv3::Parameter, known_params: &KnownParamCollection, run_all_scenarios: bool) -> ParamMutation {
     let data = param.parameter_data();
     let mut mutations = ParamMutation::new_param(param);
 
@@ -16,7 +16,9 @@ pub fn mutate(param: &openapiv3::Parameter, known_params: &KnownParamCollection)
 
     if known_params.param_known(&data.name) {
         mutations.push(&known_params.param_value(&data.name), Mutagen::ParamProper);
-        return mutations; //TODO: This is good when we want only the mutations returning 200, not general case
+        if !run_all_scenarios {
+            return mutations; // As soon as we have something that can give 200, give up trying to make more scenarios
+        }
     }
 
     if !data.is_type_defined() {

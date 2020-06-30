@@ -1,9 +1,9 @@
 
 Minos is a CLI tool heavily inspired on [Dredd](https://github.com/apiaryio/dredd)
 
-It generates requests based on the information in the OpenAPI v3 file describing the service's API.
+It generates scenarios based on the information in the OpenAPI v3 file describing the service's API.
 It runs them against a live service and compares the responses.
-In contrast to Dredd, Minos not only focuses on correct responses, it executes edge cases and incorrect cases also. See the [Scenarios](#Scenarios) for details.
+In contrast to Dredd, Minos can generate scenarios for edge cases and incorrect cases. See the [Scenarios](#Scenarios) for details.
 
 Currently Minos is opinionated and expects the OpenAPI file and the service to follow best practices.
 PRs are welcomed to make it more generic.
@@ -16,49 +16,68 @@ These are static binaries, they have zero dependencies and can run in any system
 
 # Usage
 
-If you are using Rails, simply run in your project path:
+Minos provides three commands:
+To display the generated scenarios:
 ```
-minos --run_server
+minos ls
 ```
 
-If the defaults do not work for you or are using some other technology, you can customize minos:
--  -u, --url <base-url>                 URL where the server is running (it can also be in localhost) [default:
+To run the scenarios as a test suite:
+```
+minos verify -a
+```
+
+`-a` will instruct Minos to allow errors codes to not have strict schemas.
+
+
+To run the scenarios as a performace suite:
+```
+minos performance -u 16
+```
+
+`-u 16` will instruct Minos to launch the load of 16 users simultaneously
+
+
+Additionally, you can setup any command with the following common options:
+
+-    -a, --all-codes    Generate scenarios for all codes. Default is to generate only scenarios with 200 codes.
+-    -u, --url <base-url>                 URL where the server is running (it can also be in localhost) [default:
                                          http://localhost:3000]
--  -c, --conversions <conv-filename>    The location of the conversions file with parameter values for this run.
+-    -c, --conversions <conv-filename>    The location of the conversions file with parameter values for this run.
                                          [default: ./conversions.minos]
--  -f, --file <filename>                Input OpenAPI file [default: doc/contracts/openapi.yaml]
+-    -f, --file <filename>                Input OpenAPI file [default: doc/contracts/openapi.yaml]
+-    -m, --matches <matches>              Only generate scenarios for paths matching certain expression. [default: /]
 
-In CI, it is often useful for minos to start the application server by itself.
--  -s, --server <server-command>           Command to use to launch server [default: bundle exec rails server]
--  -t, --timeout <server-wait>             Timeout allowed for the service to startup [default: 10]
 
-Additionally you can customize the behaviour with:
- - -d, --dry-run         In dryrun mode minos creates the scenarios but does not execute them against the server.
- - --allow-missing-rs    Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses.
- - -m, --matches <matches>   Only run on paths matching certain paths. [default: /]. Useful to focus on certain areas of the API.
 
- ## Example
 
-Let's just match the paths with the text "users" in them from this huge service and not run agains it:
+ ## Examples
+
+Let's just check the scenarios we get for this huge file. Only interested on path with text "users" in them:
 ```
-./minos -f=huge_service/api_definition/openapi.yaml -m=users --dry-run
+./minos -a -f=huge_service/api_definition/openapi.yaml -m=users ls
 ```
 
-Looks good, let's run the whole thing against local. The API does not define errors responses' bodies.
+Looks good, let's run the whole thing against local:
 ```
-./minos -f=huge_service/api_definition/openapi.yaml -u=http://localhost:9090 --allow-missing-rs
+./minos -a -f=huge_service/api_definition/openapi.yaml -u=http://localhost:9090 verify
+```
+
+Now let's see how good is our performance, let's not use `-a` to avoid measuring the performance of errors:
+```
+./minos -f=huge_service/api_definition/openapi.yaml -u=https://huge-dev.domain.com performance
 ```
 
 
 
 ## Conversions file
 This step is optional.
-If no conversions file is found, Minos will still test all the endpoints that do not have required parameters.
+If no conversions file is found, Minos will still generate scenarios for all the endpoints that do not have required parameters.
 
-Minos still can't discover IDs of resources for itself yet.
+Minos can't discover IDs of resources for itself yet.
 It will call all the `index` routes which do not have required parameters.
-To call be able to call other routes with required parameters in the path or query string, Minos needs a conversions file.
-The default location for the file is `./conversions.minos` but this value can be overwriten with a parameter.
+To  be able to call routes with required parameters in the path or query string, Minos needs a conversions file.
+The default location for the file is `./conversions.minos` but this value can be overwriten with the `-c` parameter.
 The format of the file is simply:
 ```
 path,<piece to be converted>,<value>
@@ -112,6 +131,7 @@ In short, Minos is quite dumb and will just sustitute the strings, no questions 
 |                        | Minos | Dredd  |
 |------------------------|-------|--------|
 | Standalone binary      | Yes   | No. Needs NPM, V8 and dependencies |
+| Runs performance tests | Yes   | No   |
 | Checks error responses | Yes   | No   |
 | Autogenerates scenarios| Yes   | No   |
 | OpenAPIv3 support      | Yes   | Yes? |

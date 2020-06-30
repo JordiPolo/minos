@@ -99,12 +99,14 @@ impl fmt::Display for Mutation {
 
 pub struct Mutator {
     known_params: KnownParamCollection,
+    run_all_codes: bool,
 }
 
 impl Mutator {
-    pub fn new(conversions: &str) -> Self {
+    pub fn new(conversions: &str, run_all_codes: bool) -> Self {
         Mutator {
             known_params: KnownParamCollection::new(conversions),
+            run_all_codes,
         }
     }
 
@@ -189,13 +191,21 @@ impl Mutator {
             println!("Could not find a passing scenario for {}. Consider adding information to the conversinons file", endpoint.path_name);
         }
 
+        // Run all codes means we let 1 error per scenario.
+        // We never want more than one error per scenario or we will not know what status code should be out there
+        let error_limit = if self.run_all_codes {
+            1
+        } else {
+            0
+        };
+
         for combination in combinations {
             let erroring = combination
                 .iter()
                 .filter(|&m| m.mutagen.expected != StatusCode::OK)
                 .count();
-            // Change to > 1 to allow erroring cases
-            if erroring > 0 {
+
+            if erroring > error_limit {
                 continue;
             }
 
@@ -322,7 +332,7 @@ impl Mutator {
                 if param.location_string() == "path" {
                     None
                 } else {
-                    Some(params::mutate(&param, &self.known_params).variations)
+                    Some(params::mutate(&param, &self.known_params, self.run_all_codes).variations)
                 }
             })
             .collect()

@@ -21,8 +21,15 @@ use std::time::Instant;
 use crate::service::Service;
 
 
-async fn run_testing_scenarios(scenarios: &Vec<scenario::Scenario<'_>>, config: &cli_args::CLIArgs, spec: &openapiv3::OpenAPI) -> Vec<(String, bool)> {
-    let service = Service::new(&config, spec.servers[0].base_path());
+fn show_scenarios(scenarios: &Vec<scenario::Scenario<'_>>) {
+    for scenario in scenarios {
+        println!("{:?}", scenario.request.to_string());
+        reporter::print_mutation_scenario(&scenario);
+    }
+    println!("{:?} scenarios generated.", scenarios.len());
+}
+
+async fn run_testing_scenarios(scenarios: &Vec<scenario::Scenario<'_>>, service: &service::Service, allow_missing_rs: bool) -> Vec<(String, bool)> {
     let mut results = Vec::new();
 
     for scenario in scenarios {
@@ -30,11 +37,6 @@ async fn run_testing_scenarios(scenarios: &Vec<scenario::Scenario<'_>>, config: 
         println!("{:?}", scenario.request.to_string());
 
         reporter::print_mutation_scenario(&scenario);
-        if config.dry_run {
-            println!("Dry run mode. No request executed.\n");
-            results.push((path, true));
-            continue;
-        }
 
         let response = service.send(&scenario.request).await;
 
@@ -47,7 +49,7 @@ async fn run_testing_scenarios(scenarios: &Vec<scenario::Scenario<'_>>, config: 
                 match validator::validate(
                     real_response,
                     scenario.expectation(),
-                    config.allow_missing_rs,
+                    allow_missing_rs,
                 ) {
                     Err(error) => {
                         debug!("{:?}", scenario.endpoint);
@@ -72,7 +74,7 @@ fn main() {
     env_logger::init();
     let config = cli_args::config();
     let spec = spec::read(&config.filename).deref_all();
-    let mutator = mutation::Mutator::new(&config.conv_filename);
+    let mutator = mutation::Mutator::new(&config.conv_filename, config.scenarios_all_codes);
     let service = Service::new(&config, spec.servers[0].base_path());
 
     // Create endpoints from the spec file.
@@ -88,13 +90,16 @@ fn main() {
     let scenarios  = endpoints.iter()
         .flat_map(|e| mutator.mutate(e));
 
-    if config.hammer_it {
-        performance::run(&scenarios.collect(), &service, &config)
-    } else {
-        let mut rt = tokio::runtime::Runtime::new().unwrap();
-        let start = Instant::now();
-        let results = rt.block_on(run_testing_scenarios(&scenarios.collect(), &config, &spec));
-        reporter::run_summary(&results, start);
+    match config.command {
+        cli_args::Command::Ls => {show_scenarios(&scenarios.collect())},
+        cli_args::Command::Performance{ users } => performance::run(&scenarios.collect(), &service, users),
+        cli_args::Command::Verify { allow_missing_rs } => {
+            let mut rt = tokio::runtime::Runtime::new().unwrap();
+            let start = Instant::now();
+            let results = rt.block_on(run_testing_scenarios(&scenarios.collect(),  &service, allow_missing_rs));
+            reporter::run_summary(&results, start);
+        }
     }
+
 }
 
