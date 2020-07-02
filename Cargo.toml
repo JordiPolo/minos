@@ -26,9 +26,9 @@ reqwest = { version = "0.10", default-features = false, features = ["json", "rus
 structopt = "0.3"
 termcolor = "1.0"
 uuid = { version = ">= 0.6", features = ["v4"] }
-rand = "0.7.0"
+rand = "0.7"
 chrono = "0.4"
-openapiv3 = "0.3.2"
+openapiv3 = "0.3"
 #openapi_utils = { path = "../../oasproxy/openapi_utils" }
 openapi_utils = "0.2"
 thiserror = "1.0"
@@ -38,12 +38,12 @@ env_logger = "0.7"
 http = "*"
 shellexpand = "2.0"
 itertools = "0.9"
-comfy-table = "0.1.0"
+comfy-table = "0.1"
 lazy_static = "*"
 tokio = { version = "0.2", features = ["full"] }
 #mauth-client = { path = "../mauth-client-rust"}
 hyper = "*"
-goose = "^0.8"
+goose = { version = "0.8", default-features = false, features = ["rustls"] }
 
 
 [profile.dev]
