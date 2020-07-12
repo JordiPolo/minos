@@ -79,6 +79,6 @@ pub enum Command {
             long = "allow-missing-rs",
             help = "Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses."
         )]
-        allow_missing_rs: bool,
+        without_rs: bool,
     },
 }

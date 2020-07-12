@@ -11,7 +11,11 @@ lazy_static! {
         RwLock::new(Vec::new());
 }
 
-pub fn run(scenarios: &Vec<scenario::Scenario<'_>>, service: &service::Service, users: usize) {
+pub fn run<'a>(
+    scenarios: impl Iterator<Item = scenario::Scenario<'a>>,
+    service: &service::Service,
+    users: usize,
+) {
     // TODO: I need to put all the defaults here because the method that set them up also sets stuff I do not want.
     let mut configuration: GooseConfiguration = Default::default();
     configuration.hatch_rate = 1; // Make one user per second
