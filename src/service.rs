@@ -1,6 +1,4 @@
-use std::{
-    fmt,
-};
+use std::fmt;
 
 use crate::cli_args::*;
 use crate::request_param::RequestParam;
@@ -63,7 +61,7 @@ impl Request {
         let mut rng = rand::thread_rng();
         let trace_id = format!("{:x}", rng.gen::<u128>());
         let span_id = format!("{:x}", rng.gen::<u64>());
-// TODO: Verify apps receive and use thsese keys
+        // TODO: Verify apps receive and use thsese keys
         request_headers.insert("Accept", HeaderValue::from_static("application/json"));
         request_headers.insert("X-B3-Sampled", HeaderValue::from_static("0"));
         request_headers.insert("X-B3-TraceId", HeaderValue::from_str(&trace_id).unwrap());
@@ -123,7 +121,6 @@ pub struct ServiceResponse {
 
 impl Service {
     pub fn new(config: &CLIArgs, base_path: String) -> Self {
-
         let client = reqwest::Client::new();
         Service {
             base_url: config.base_url.clone(),
@@ -137,20 +134,22 @@ impl Service {
         info!("Sending request {:?}", request);
         debug!("Request headers {:?}", request.headers());
 
-
         // Create http request
         let mut builder = http::request::Builder::new();
 
         let headers = builder.headers_mut().unwrap();
-         for (key, value) in request.headers().iter() {
-             headers.insert(key, value.clone());
-         }
+        for (key, value) in request.headers().iter() {
+            headers.insert(key, value.clone());
+        }
 
-        let mut requ = builder.method(request.method())
-        .uri(&endpoint)
-        .body(hyper::Body::from(""))
-        .expect(&format!("{:?} is not a valid URL. Check the base URL.", &endpoint));
-
+        let mut requ = builder
+            .method(request.method())
+            .uri(&endpoint)
+            .body(hyper::Body::from(""))
+            .expect(&format!(
+                "{:?} is not a valid URL. Check the base URL.",
+                &endpoint
+            ));
 
         // TODO: Do not re-read the file multiple times
         // Add mauth headers
@@ -161,16 +160,20 @@ impl Service {
         requ
     }
 
-// TODO: when network does not find the address this is blocking the thread
+    // TODO: when network does not find the address this is blocking the thread
     pub async fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
         let requ = self.build_hyper_request(request);
 
-         //launch request as a request request wich implies copying, TODO: prevent copying
+        //launch request as a request request wich implies copying, TODO: prevent copying
         let resp = self
-        .client
-        .request(requ.method().clone(), reqwest::Url::parse(&requ.uri().to_string()).unwrap())
-        .headers(requ.headers().clone())
-        .send().await?;
+            .client
+            .request(
+                requ.method().clone(),
+                reqwest::Url::parse(&requ.uri().to_string()).unwrap(),
+            )
+            .headers(requ.headers().clone())
+            .send()
+            .await?;
 
         debug!("Response headers {:?}", resp.headers());
 

@@ -15,11 +15,10 @@ mod service;
 mod spec;
 mod validator;
 
+use crate::service::Service;
 use log::debug;
 use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
 use std::time::Instant;
-use crate::service::Service;
-
 
 fn show_scenarios(scenarios: &Vec<scenario::Scenario<'_>>) {
     for scenario in scenarios {
@@ -29,7 +28,11 @@ fn show_scenarios(scenarios: &Vec<scenario::Scenario<'_>>) {
     println!("{:?} scenarios generated.", scenarios.len());
 }
 
-async fn run_testing_scenarios(scenarios: &Vec<scenario::Scenario<'_>>, service: &service::Service, allow_missing_rs: bool) -> Vec<(String, bool)> {
+async fn run_testing_scenarios(
+    scenarios: &Vec<scenario::Scenario<'_>>,
+    service: &service::Service,
+    allow_missing_rs: bool,
+) -> Vec<(String, bool)> {
     let mut results = Vec::new();
 
     for scenario in scenarios {
@@ -46,11 +49,7 @@ async fn run_testing_scenarios(scenarios: &Vec<scenario::Scenario<'_>>, service:
                 results.push((path, false));
             }
             Ok(real_response) => {
-                match validator::validate(
-                    real_response,
-                    scenario.expectation(),
-                    allow_missing_rs,
-                ) {
+                match validator::validate(real_response, scenario.expectation(), allow_missing_rs) {
                     Err(error) => {
                         debug!("{:?}", scenario.endpoint);
                         reporter::test_failed(error);
@@ -69,7 +68,6 @@ async fn run_testing_scenarios(scenarios: &Vec<scenario::Scenario<'_>>, service:
     results
 }
 
-
 fn main() {
     env_logger::init();
     let config = cli_args::config();
@@ -77,7 +75,6 @@ fn main() {
     let mutator = mutation::Mutator::new(&config.conv_filename, config.scenarios_all_codes);
     let service = Service::new(&config, spec.servers[0].base_path());
 
-    // Create endpoints from the spec file.
     let endpoints: Vec<operation::Endpoint> = spec
         .paths
         .iter()
@@ -87,19 +84,22 @@ fn main() {
         })
         .collect();
 
-    let scenarios  = endpoints.iter()
-        .flat_map(|e| mutator.mutate(e));
+    let scenarios = endpoints.iter().flat_map(|e| mutator.mutate(e));
 
     match config.command {
-        cli_args::Command::Ls => {show_scenarios(&scenarios.collect())},
-        cli_args::Command::Performance{ users } => performance::run(&scenarios.collect(), &service, users),
+        cli_args::Command::Ls => show_scenarios(&scenarios.collect()),
+        cli_args::Command::Performance { users } => {
+            performance::run(&scenarios.collect(), &service, users)
+        }
         cli_args::Command::Verify { allow_missing_rs } => {
             let mut rt = tokio::runtime::Runtime::new().unwrap();
             let start = Instant::now();
-            let results = rt.block_on(run_testing_scenarios(&scenarios.collect(),  &service, allow_missing_rs));
+            let results = rt.block_on(run_testing_scenarios(
+                &scenarios.collect(),
+                &service,
+                allow_missing_rs,
+            ));
             reporter::run_summary(&results, start);
         }
     }
-
 }
-

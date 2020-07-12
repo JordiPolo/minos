@@ -19,7 +19,6 @@ edition = "2018"
 [dependencies]
 regex = "1.0"
 serde = "1.0"
-serde_derive = "1.0"
 serde_json = "1.0"
 serde_yaml = "*"
 reqwest = { version = "0.10", default-features = false, features = ["json", "rustls-tls"] }
@@ -38,7 +37,7 @@ env_logger = "0.7"
 http = "*"
 shellexpand = "2.0"
 itertools = "0.9"
-comfy-table = "0.1"
+comfy-table = "1.0"
 lazy_static = "*"
 tokio = { version = "0.2", features = ["full"] }
 #mauth-client = { path = "../mauth-client-rust"}
