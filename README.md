@@ -16,42 +16,49 @@ These are static binaries, they have zero dependencies and can run in any system
 
 # Usage
 
-Minos provides three commands:
-To display the generated scenarios:
+Minos autogenerates a set of scenarios then it can display them, test them, or run them as performance suite.
+As those activities have a lot in common you can use the following common flags to change how minos behaves:
+
+- `-a, --all-codes`    Generate scenarios for all codes. Default is to generate only scenarios with 200 codes.
+- `-u, --url <base-url>`  URL where the server is running (it can also be in localhost) [default: http://localhost:3000]
+- `-c, --conversions <conv-filename>`  Location of the conversions file with values for this run. [default: ./conversions.minos]
+- `-f, --file <filename>`    Input OpenAPI file [default: doc/contracts/openapi.yaml]
+- `-m, --matches <matches>`  Only generate scenarios for paths matching certain expression. [default: /]
+
+
+
+## Display
+
+To just display the generated scenarios but not create any request do:
 ```
 minos ls
 ```
 
+## Testing
 To run the scenarios as a test suite:
 ```
 minos verify -n
 ```
 
-`-n` will instruct Minos to allow errors codes to not have strict schemas.
+- `-n` will instruct Minos to allow errors codes to not have strict schemas.
 
 
+## Performance suite
 To run the scenarios as a performace suite:
 ```
-minos performance -t 16
+minos performance -t 16 -r 50 -l 2m
 ```
-
-`-t 16` will instruct Minos to launch the load of 16 users simultaneously
-
-
-Additionally, you can setup any command with the following common options:
-
--    -a, --all-codes    Generate scenarios for all codes. Default is to generate only scenarios with 200 codes.
--    -u, --url <base-url>                 URL where the server is running (it can also be in localhost) [default:
-                                         http://localhost:3000]
--    -c, --conversions <conv-filename>    The location of the conversions file with parameter values for this run.
-                                         [default: ./conversions.minos]
--    -f, --file <filename>                Input OpenAPI file [default: doc/contracts/openapi.yaml]
--    -m, --matches <matches>              Only generate scenarios for paths matching certain expression. [default: /]
+`-t 64` will launch the load of 64 users simultaneously.
+Each user uses an independent thread which uses memory, you may start consuming a lot with more than 1000 users.
+`-r 100` will limit the request per second to this service to 100 per second.
+This is across all the users and all the paths. Total maximum the server will see.
+Note that if the amount of users is not enough, the server may see less than 100.
+Note that with short runs (< `1m`) the time to shutdown all threads may cause a lower total average of request per second.
+`-l 2m` Test for 2 minutes.
+You can use other such notations like 90s or 1h30m , etc.
 
 
-
-
- ## Examples
+ ## Realistic Examples
 
 Let's just check the scenarios we get for this huge file. Only interested on path with text "users" in them:
 ```

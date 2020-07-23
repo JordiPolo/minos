@@ -42,7 +42,6 @@ pub struct CLIArgs {
     )]
     pub matches: String,
 
-    // TODO: this to do something, right now hardcoded to only 200 code
     #[structopt(
         short = "a",
         long = "all-codes",
@@ -59,16 +58,7 @@ pub enum Command {
     #[structopt(about = "Shows generated scenarios but does not run them.")]
     Ls,
 
-    #[structopt(about = "Runs auto-genenerated scenarios as performance tests.")]
-    Performance {
-        #[structopt(
-            short = "t",
-            long = "threads",
-            help = "Number of threads(users) running the performance suite.",
-            default_value = "8"
-        )]
-        users: usize,
-    },
+    Performance(PerformanceCommand),
 
     #[structopt(
         about = "Runs auto-generated scenarios to verify the service follows the openapi contract"
@@ -81,4 +71,31 @@ pub enum Command {
         )]
         without_rs: bool,
     },
+}
+
+#[derive(StructOpt)]
+#[structopt(about = "Runs auto-genenerated scenarios as performance tests.")]
+pub struct PerformanceCommand {
+    #[structopt(
+        short = "t",
+        long = "threads",
+        help = "Number of threads(users) running the performance suite. More users more resources used.",
+        default_value = "16"
+    )]
+    pub users: usize,
+    #[structopt(
+        short = "r",
+        long = "requests",
+        help = "Number of maximum requests per second to run against the whole service.",
+        default_value = "100"
+    )]
+    pub request_per_second: usize,
+
+    #[structopt(
+        short = "l",
+        long = "length",
+        help = "Length of test, as readable time (300s, 20m, 3h, 1h30m, etc.) .",
+        default_value = "90s"
+    )]
+    pub time: String,
 }

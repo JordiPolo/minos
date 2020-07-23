@@ -39,7 +39,7 @@ fn main() {
 
     match config.command {
         Command::Ls => command_ls::run(scenarios),
-        Command::Performance { users } => command_performance::run(scenarios, &service, users),
+        Command::Performance(config) => command_performance::run(scenarios, &service, config),
         Command::Verify { without_rs } => command_verify::run(scenarios, &service, without_rs),
     }
 }

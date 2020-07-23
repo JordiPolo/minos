@@ -16,7 +16,7 @@ impl ParamMutation {
     }
     pub fn push(&mut self, value: &str, mutagen: Mutagen) {
         let instruction = schema_mutagen(&mutagen)[0].clone();
-        let param = RequestParam::new(&self.param.parameter_data().name, value.clone());
+        let param = RequestParam::new(&self.param.parameter_data().name, value);
         self.variations
             .push(Mutation::new_param(instruction, param));
     }
@@ -28,7 +28,7 @@ impl ParamMutation {
                 (instruction.request_part == RequestPart::RequiredParam) == required
             })
             .unwrap();
-        let param = RequestParam::new2(&self.param.parameter_data().name, value.clone());
+        let param = RequestParam::new2(&self.param.parameter_data().name, value);
         self.variations
             .push(Mutation::new_param(instruction, param));
         // for instruction in instructions {

@@ -42,7 +42,12 @@ lazy_static = "*"
 tokio = { version = "0.2", features = ["full"] }
 #mauth-client = { path = "../mauth-client-rust"}
 hyper = "*"
-goose = { version = "0.8", default-features = false, features = ["rustls"] }
+
+[dependencies.goose]
+version = "0.9.0"
+default-features = false
+features = ["rustls"]
+#git = "https://github.com/tag1consulting/goose"
 
 
 [profile.dev]
@@ -51,4 +56,6 @@ debug = 0
 [profile.release]
 opt-level = 3
 lto = true
+codegen-units = 1 # better optimizations
+incremental = false
 panic = 'abort'
