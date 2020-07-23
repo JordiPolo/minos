@@ -1,11 +1,11 @@
 
-Minos is a CLI tool heavily inspired on [Dredd](https://github.com/apiaryio/dredd)
+Minos automatically generates scenarios based on the information in the OpenAPI v3 file describing the service's API.
+The testing command runs the scenarios and compares responses with the contract.
+The performance command runs the scenarios as a performance suite.
 
-It generates scenarios based on the information in the OpenAPI v3 file describing the service's API.
-It runs them against a live service and compares the responses.
-In contrast to Dredd, Minos can generate scenarios for edge cases and incorrect cases. See the [Scenarios](#Scenarios) for details.
+Minos can generate scenarios for edge cases and incorrect cases. See the [Scenarios](#Scenarios) for details.
 
-Currently Minos is opinionated and expects the OpenAPI file and the service to follow best practices.
+Minos is opinionated and expects the OpenAPI file and the service to follow best practices.
 PRs are welcomed to make it more generic.
 
 # Installation
@@ -16,8 +16,9 @@ These are static binaries, they have zero dependencies and can run in any system
 
 # Usage
 
-Minos autogenerates a set of scenarios then it can display them, test them, or run them as performance suite.
-As those activities have a lot in common you can use the following common flags to change how minos behaves:
+## Common flags
+
+You can use the following common flags before your command below to control its behavior:
 
 - `-a, --all-codes`    Generate scenarios for all codes. Default is to generate only scenarios with 200 codes.
 - `-u, --url <base-url>`  URL where the server is running (it can also be in localhost) [default: http://localhost:3000]
@@ -25,16 +26,16 @@ As those activities have a lot in common you can use the following common flags 
 - `-f, --file <filename>`    Input OpenAPI file [default: doc/contracts/openapi.yaml]
 - `-m, --matches <matches>`  Only generate scenarios for paths matching certain expression. [default: /]
 
+## Commands
 
+### Displaying scenarios
 
-## Display
-
-To just display the generated scenarios but not create any request do:
+To just inspect the generated scenarios but not create any request do:
 ```
 minos ls
 ```
 
-## Testing
+### Testing scenarios
 To run the scenarios as a test suite:
 ```
 minos verify -n
@@ -43,22 +44,22 @@ minos verify -n
 - `-n` will instruct Minos to allow errors codes to not have strict schemas.
 
 
-## Performance suite
+### Performance suite
 To run the scenarios as a performace suite:
 ```
 minos performance -t 16 -r 50 -l 2m
 ```
-`-t 64` will launch the load of 64 users simultaneously.
+- `-t 64` will launch the load of 64 users simultaneously.
 Each user uses an independent thread which uses memory, you may start consuming a lot with more than 1000 users.
-`-r 100` will limit the request per second to this service to 100 per second.
+- `-r 100` will limit the request per second to this service to 100 per second.
 This is across all the users and all the paths. Total maximum the server will see.
 Note that if the amount of users is not enough, the server may see less than 100.
 Note that with short runs (< `1m`) the time to shutdown all threads may cause a lower total average of request per second.
-`-l 2m` Test for 2 minutes.
+- `-l 2m` Test for 2 minutes.
 You can use other such notations like 90s or 1h30m , etc.
 
 
- ## Realistic Examples
+ ## Examples
 
 Let's just check the scenarios we get for this huge file. Only interested on path with text "users" in them:
 ```
@@ -133,25 +134,6 @@ Minos will test:
 In short, Minos is quite dumb and will just sustitute the strings, no questions asked.
 
 
-# Dredd comparison
-
-|                        | Minos | Dredd  |
-|------------------------|-------|--------|
-| Standalone binary      | Yes   | No. Needs NPM, V8 and dependencies |
-| Runs performance tests | Yes   | No   |
-| Checks error responses | Yes   | No   |
-| Autogenerates scenarios| Yes   | No   |
-| OpenAPIv3 support      | Yes   | Yes? |
-| CI support             | Yes   | Yes  |
-| API Blueprint support  | No    | Yes  |
-| Hooks                  | No    | Yes  |
-| Big community          | No    | Yes  |
-| Good documentation     | None  | Yes  |
-| Routes                 | GET   | All  |
-
-
-Hopefully in the future Minos will be equal and superior to Dredd, ideally it will support the same hooks.
-
 # Scenarios
 ## General
 - Content-Type
@@ -181,6 +163,27 @@ Hopefully in the future Minos will be equal and superior to Dredd, ideally it wi
 - Validate Content-Type
 - Validate status code
 - Validate response body
+
+
+# Dredd comparison
+Minos is similar to [Dredd](https://github.com/apiaryio/dredd).
+
+|                        | Minos | Dredd  |
+|------------------------|-------|--------|
+| Standalone binary      | Yes   | No. Needs NPM, V8 and dependencies |
+| Runs performance tests | Yes   | No   |
+| Checks error responses | Yes   | No   |
+| Autogenerates scenarios| Yes   | No   |
+| OpenAPIv3 support      | Yes   | Yes? |
+| CI support             | Yes   | Yes  |
+| API Blueprint support  | No    | Yes  |
+| Hooks                  | No    | Yes  |
+| Big community          | No    | Yes  |
+| Good documentation     | None  | Yes  |
+| Routes                 | GET   | All  |
+
+
+Hopefully in the future Minos will be equal and superior to Dredd, ideally it will support the same hooks.
 
 
 # TODO
