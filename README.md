@@ -1,7 +1,6 @@
 
-Minos automatically generates scenarios based on the information in the OpenAPI v3 file describing the service's API.
-The testing command runs the scenarios and compares responses with the contract.
-The performance command runs the scenarios as a performance suite.
+Minos generates scenarios based on the information in an OpenAPI v3 file.
+These scenarios can then be displayed, used as a test suite or used as a performance suite.
 
 Minos can generate scenarios for edge cases and incorrect cases. See the [Scenarios](#Scenarios) for details.
 
@@ -47,12 +46,12 @@ minos verify -n
 ### Performance suite
 To run the scenarios as a performace suite:
 ```
-minos performance -t 16 -r 50 -l 2m
+minos performance -t 64 -r 100 -l 2m
 ```
 - `-t 64` will launch the load of 64 users simultaneously.
 Each user uses an independent thread which uses memory, you may start consuming a lot with more than 1000 users.
 - `-r 100` will limit the request per second to this service to 100 per second.
-This is across all the users and all the paths. Total maximum the server will see.
+This is across all the users and all the paths. Total *maximum* the server will see.
 Note that if the amount of users is not enough, the server may see less than 100.
 Note that with short runs (< `1m`) the time to shutdown all threads may cause a lower total average of request per second.
 - `-l 2m` Test for 2 minutes.
@@ -165,7 +164,7 @@ In short, Minos is quite dumb and will just sustitute the strings, no questions 
 - Validate response body
 
 
-# Dredd comparison
+# Comparison with Dredd
 Minos is similar to [Dredd](https://github.com/apiaryio/dredd).
 
 |                        | Minos | Dredd  |
