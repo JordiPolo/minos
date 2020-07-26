@@ -20,12 +20,22 @@ use crate::cli_args::Command;
 use crate::service::Service;
 use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
 
+const LOGO: &str = r"
+           _
+          (_)
+ _ __ ___  _ _ __   ___   ___
+| '_ ` _ \| | '_ \ / _ \ / __|
+| | | | | | | | | | (_) |\__ \
+|_| |_| |_|_|_| |_|\___/ \___/
+";
+
 fn main() {
     env_logger::init();
     let config = cli_args::config();
     let spec = spec::read(&config.filename).deref_all();
     let mutator = mutation::Mutator::new(&config.conv_filename, config.scenarios_all_codes);
     let service = Service::new(&config, spec.servers[0].base_path());
+    println!("{}", LOGO);
 
     let endpoints  : Vec<operation::Endpoint> = spec
         .paths

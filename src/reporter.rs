@@ -99,6 +99,10 @@ pub fn run_summary(results: &[(String, bool)], start: std::time::Instant) {
     }
 }
 
+pub fn print_value(message: impl Display) {
+    Printer::new().print_color(message, Color::Green);
+}
+
 fn print_success(message: impl Display) {
     Printer::new().print_color(message, Color::Green);
 }

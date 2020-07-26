@@ -1,6 +1,6 @@
 [package]
 name = "minos"
-version = "0.2.0"
+version = "0.2.2"
 authors = ["Jordi Polo Carres <mumismo@gmail.com>"]
 description = """
 Minos is a command line tool to generate and run scenarios against
@@ -42,6 +42,7 @@ lazy_static = "*"
 tokio = { version = "0.2", features = ["full"] }
 #mauth-client = { path = "../mauth-client-rust"}
 hyper = "*"
+indicatif = "*"
 
 [dependencies.goose]
 version = "0.9.0"
