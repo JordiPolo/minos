@@ -19,6 +19,8 @@ mod validator;
 use crate::cli_args::Command;
 use crate::service::Service;
 use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
+use tracing_subscriber::filter::EnvFilter;
+use tracing_subscriber::FmtSubscriber;
 
 const LOGO: &str = r"
            _
@@ -30,7 +32,11 @@ const LOGO: &str = r"
 ";
 
 fn main() {
-    env_logger::init();
+    FmtSubscriber::builder()
+        .with_env_filter(EnvFilter::from_env("MINOS_LOG"))
+        .without_time()
+        .init();
+
     let config = cli_args::config();
     let spec = spec::read(&config.filename).deref_all();
     let mutator = mutation::Mutator::new(&config.conv_filename, config.scenarios_all_codes);

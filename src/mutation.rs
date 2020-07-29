@@ -7,7 +7,7 @@ use http::StatusCode;
 use instructions::{Mutagen, MutagenInstruction, RequestPart};
 use itertools::Itertools;
 use lazy_static::lazy_static;
-use log::debug;
+use tracing::debug;
 use openapi_utils::{OperationExt, ParameterExt};
 use std::cmp::Ordering;
 

@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::cli_args::*;
 use crate::request_param::RequestParam;
-use log::{debug, info};
+use tracing::{debug, info};
 use rand::Rng;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Method;

@@ -2,7 +2,7 @@ use crate::reporter;
 use crate::scenario::Scenario;
 use crate::service;
 use crate::validator;
-use log::debug;
+use tracing::debug;
 use std::time::Instant;
 
 pub fn run<'a>(

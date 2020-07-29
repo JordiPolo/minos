@@ -1,4 +1,4 @@
-use log::debug;
+use tracing::debug;
 
 pub fn read(filename: &str) -> openapiv3::OpenAPI {
     match std::fs::read_to_string(filename) {
