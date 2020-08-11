@@ -133,6 +133,7 @@ impl Mutator {
         let mut non_query_params: Vec<Vec<&Mutation>> = Vec::new();
 
         debug!("QM size {:?}", query_mutations.len());
+
         // Each vector has the mutations for one parameter and we do not care about that order
         // But we care that 200 is at the top so we order by expedted
         for mutations_vec in query_mutations {
@@ -158,8 +159,14 @@ impl Mutator {
 
         // As per the sorting the first item on each column should be a passing mutation
         let mut all_good = Vec::new();
-        for i in 0..total.len() {
-            all_good.push(total[i][0]);
+
+        // If for instance an endpoint has only one required param but it is not know
+        // And we are creating only passing mutations
+        // Then we can't create any mutation and this will be empty. Remove these
+        total = total.into_iter().filter(|x| !x.is_empty()).collect();
+
+        for endpoint_mutation in &total {
+            all_good.push(endpoint_mutation[0]);
         }
 
         // If any error here that means we can't combine that category
@@ -323,8 +330,13 @@ impl Mutator {
 
     fn mutations_from_mutagen_query(&self, endpoint: &Endpoint) -> Vec<Vec<Mutation>> {
         let mut params = Vec::new();
-        params.extend(endpoint.method.optional_parameters());
-        params.extend(endpoint.method.required_parameters());
+        if !endpoint.method.optional_parameters().is_empty() {
+            params.extend(endpoint.method.optional_parameters());
+        }
+        if !endpoint.method.required_parameters().is_empty() {
+            params.extend(endpoint.method.required_parameters());
+        }
+
 
         params
             .iter()

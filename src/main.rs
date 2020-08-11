@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 #![forbid(unsafe_code)]
 
+mod authentication;
 mod cli_args;
 mod command_ls;
 mod command_performance;
@@ -48,7 +49,7 @@ fn main() {
         .iter()
         .filter(|p| p.0.contains(&config.matches))
         .flat_map(|(path_name, methods)| {
-            operation::Endpoint::create_supported_endpoint(path_name, methods.to_item_ref())
+            operation::Endpoint::new_supported(path_name, methods.to_item_ref())
         }).collect();
 
     let scenarios = endpoints.iter().flat_map(|e| mutator.mutate(&e));

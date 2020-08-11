@@ -56,14 +56,14 @@ pub fn run<'a>(
         println!("");
     });
 
-    let goose_values = goose_attack
+    let goose_stats = goose_attack
         .register_taskset(taskset!("Minos Performance Test").register_task(task!(call_url)))
         .execute()
         .expect("Errors while running performance test");
 
     indicative.join().unwrap();
 
-    goose_values.display();
+    goose_stats.print();
 }
 
 async fn call_url(user: &GooseUser) -> GooseTaskResult {
@@ -148,8 +148,7 @@ fn parse_timespan(time_str: &str) -> usize {
                 Some(_) => usize::from_str(&time_matches["seconds"]).unwrap(),
                 None => 0,
             };
-            let total = hours * 60 * 60 + minutes * 60 + seconds;
-            total
+            hours * 60 * 60 + minutes * 60 + seconds
         }
     }
 }

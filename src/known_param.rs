@@ -19,7 +19,8 @@ impl KnownParam {
     // pattern {user_uuid} path: /v1/users/{user_uuid}/onboard -> true
     // pattern {user_uuid} path: /v1/users/{user_uuid}/friends/{friend_uuid} -> false
     fn path_matches(&self, full_path: &str) -> bool {
-        self.context == "path"
+        (self.context == "path"
+            || (self.context != "query" && full_path.contains(&self.context)))
             && full_path.contains(&self.pattern)
             && full_path.matches('}').count() == self.pattern.matches('}').count()
     }

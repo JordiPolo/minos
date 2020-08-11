@@ -1,12 +1,11 @@
 use std::fmt;
-
 use crate::cli_args::*;
 use crate::request_param::RequestParam;
+use crate::authentication::Authentication;
 use tracing::{debug, info};
 use rand::Rng;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
 use reqwest::Method;
-//use mauth_client::*;
 
 #[derive(Debug)]
 pub struct Request {
@@ -111,6 +110,7 @@ pub struct Service {
     base_url: String,
     base_path: String,
     client: reqwest::Client, //reqwest::blocking::Client,
+    authentication: Authentication,
 }
 
 pub struct ServiceResponse {
@@ -122,10 +122,12 @@ pub struct ServiceResponse {
 impl Service {
     pub fn new(config: &CLIArgs, base_path: String) -> Self {
         let client = reqwest::Client::new();
+        let authentication = Authentication::new();
         Service {
             base_url: config.base_url.clone(),
             base_path,
             client,
+            authentication,
         }
     }
 
@@ -150,13 +152,7 @@ impl Service {
                 "{:?} is not a valid URL. Check the base URL.",
                 &endpoint
             ));
-
-        // TODO: Do not re-read the file multiple times
-        // Add mauth headers
-        // let mauth_info = MAuthInfo::from_default_file().expect("Mauth file missing");
-        // // on empy body we digest "" TODO: Support request bodies
-        // let (_, body_digest) = MAuthInfo::build_body_with_digest("".to_string());
-        // mauth_info.sign_request_v2(&mut requ, &body_digest);
+            self.authentication.authenticate(&mut requ);
         requ
     }
 
@@ -193,3 +189,4 @@ impl Service {
         })
     }
 }
+
