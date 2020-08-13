@@ -1,4 +1,4 @@
-use crate::known_param::KnownParamCollection;
+use crate::known_param::Conversions;
 use crate::mutation::bool_type;
 use crate::mutation::integer_type;
 use crate::mutation::param_mutation::ParamMutation;
@@ -10,7 +10,7 @@ use openapiv3::Type;
 /// TODO: How to make sure we generate for all the Mutagens?
 pub fn mutate(
     param: &openapiv3::Parameter,
-    known_params: &KnownParamCollection,
+    known_params: &Conversions,
     run_all_scenarios: bool,
 ) -> ParamMutation {
     let data = param.parameter_data();

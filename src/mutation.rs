@@ -1,4 +1,4 @@
-use crate::known_param::KnownParamCollection;
+use crate::known_param::Conversions;
 use crate::operation::Endpoint;
 use crate::request_param::RequestParam;
 use crate::scenario::Scenario;
@@ -102,14 +102,14 @@ impl fmt::Display for Mutation {
 }
 
 pub struct Mutator {
-    known_params: KnownParamCollection,
+    known_params: Conversions,
     run_all_codes: bool,
 }
 
 impl Mutator {
     pub fn new(conversions: &str, run_all_codes: bool) -> Self {
         Mutator {
-            known_params: KnownParamCollection::new(conversions),
+            known_params: Conversions::new(conversions),
             run_all_codes,
         }
     }

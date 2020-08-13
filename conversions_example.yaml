@@ -1,0 +1,9 @@
+
+paths:
+  "/":
+    user_uuid: [03b97130-1be2-42f9-bdaf-e1f6a2b9e269]
+
+  teams:
+    uuid: 03b97130-1be2-42f9-bdaf-e1f6a2b9e269
+  roles:
+    uuid: effb3dfd-26be-4948-8786-4a04ea208461

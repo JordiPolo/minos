@@ -79,19 +79,9 @@ Now let's see how good is our performance, let's not use `-a` to avoid measuring
 
 ## Conversions file
 This step is optional.
-If no conversions file is found, Minos will still generate scenarios for all the endpoints that do not have required parameters.
-
-Minos can't discover IDs of resources for itself yet.
-It will call all the `index` routes which do not have required parameters.
-To  be able to call routes with required parameters in the path or query string, Minos needs a conversions file.
-The default location for the file is `./conversions.minos` but this value can be overwriten with the `-c` parameter.
-The format of the file is simply:
-```
-path,<piece to be converted>,<value>
-path,<piece to be converted2>,<value2>
-param,<piece to be converted2>,<value2>
-...
-```
+Minos allows you to specify the value of any parameter. Minos will use this information to create requests.
+This is typically used to provide IDs that need to exist in your database (user_id, app_uuid, etc.).
+The default location for the file is `./conversions.yml` but this value can be overwriten with the `-c` parameter.
 
 ### Example
 Our Openapi spec has the following routes
@@ -104,33 +94,35 @@ Our Openapi spec has the following routes
 ...
 /houses/{house_id}/renters/{renter_id}:
 ...
+/house_owners/{house_id}:
 ```
 
-When we have a `conversions.minos` file like:
+When we have a `conversions.yaml` file like:
 ```
-path,{house_id},55505
-path,{renter_id},60000
-query,city_id,1000
+paths:
+  "/":
+    house_id: [55505, 55506, 55507, 55508]
+    renter_id: 6000
+    city_id: 1000
+
+  house_owners:
+    house_id: 19991
 ```
-Minos will test:
+
+Minos would test:
 ```
 /houses/55505?city_id=1000
-/houses/55505/renters/60000
+/houses/55508/renters/60000
+/houses/19991
 ```
 
-If we want to use a different house_id for testing renting, with a file like:
-```
-path,{house_id},55505
-path,{house_id}/renters/{renter_id},1111/renters/60000
-query,city_id,1000
-```
+The parameters within the "/" path will match any parameter in the openapi file.
+If you need to match only a specific path, you can add the parameter within that specific path.
+That is useful if you use the same param name everywhere (id, etc.) and you want to specify it per endpoint.
+It this is not your case, where possible use "/" so you match as widely as possible.
 
-Minos will test:
-```
-/houses/55505?city_id=1000
-/houses/1111/renters/60000
-```
-In short, Minos is quite dumb and will just sustitute the strings, no questions asked.
+Note that when an array of values is passed for a parameter, Minos will choose one random value from the array.
+This is specially useful when running performance tests.
 
 
 # Scenarios

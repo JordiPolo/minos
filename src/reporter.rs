@@ -44,7 +44,7 @@ pub fn print_mutation_scenario(scenario: &Scenario) {
         } else {
             Color::Blue
         };
-        printer.print_color(mutation, color);
+      //  printer.print_color(mutation, color);
     }
     printer.print_color(
         format!(

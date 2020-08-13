@@ -30,7 +30,7 @@ pub struct CLIArgs {
         short = "c",
         long = "conversions",
         help = "The location of the conversions file with parameter values for this run.",
-        default_value = "./conversions.minos"
+        default_value = "./conversions.yml"
     )]
     pub conv_filename: String,
 
