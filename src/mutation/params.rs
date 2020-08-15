@@ -1,4 +1,4 @@
-use crate::known_param::Conversions;
+use crate::known_param::ConversionView;
 use crate::mutation::bool_type;
 use crate::mutation::integer_type;
 use crate::mutation::param_mutation::ParamMutation;
@@ -7,10 +7,11 @@ use crate::mutation::Mutagen;
 use openapi_utils::{ParameterDataExt, ParameterExt};
 use openapiv3::Type;
 
+
 /// TODO: How to make sure we generate for all the Mutagens?
 pub fn mutate(
     param: &openapiv3::Parameter,
-    known_params: &Conversions,
+    known_params: &ConversionView,
     run_all_scenarios: bool,
 ) -> ParamMutation {
     let data = param.parameter_data();
@@ -18,8 +19,8 @@ pub fn mutate(
 
     mutations.push_multiple(None, Mutagen::None, param.parameter_data().required);
 
-    if known_params.param_known(&data.name) {
-        mutations.push(&known_params.param_value(&data.name), Mutagen::ParamProper);
+    if let Some(param_value) = known_params.param_value(&data.name) {
+        mutations.push(&param_value, Mutagen::ParamProper);
         if !run_all_scenarios {
             return mutations; // As soon as we have something that can give 200, give up trying to make more scenarios
         }

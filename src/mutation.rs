@@ -344,7 +344,8 @@ impl Mutator {
                 if param.location_string() == "path" {
                     None
                 } else {
-                    Some(params::mutate(&param, &self.known_params, self.run_all_codes).variations)
+                    let known_params = self.known_params.for_path(&endpoint.path_name);
+                    Some(params::mutate(&param, &known_params, self.run_all_codes).variations)
                 }
             })
             .collect()
@@ -392,7 +393,7 @@ impl Mutator {
         match mutagen {
             Mutagen::PathProper => {
                 if path.contains('}') {
-                    self.known_params.retrieve_known_path(path)
+                    self.known_params.for_path(path).retrieve_known_path(path)
                 } else {
                     Some(String::from(path))
                 }
