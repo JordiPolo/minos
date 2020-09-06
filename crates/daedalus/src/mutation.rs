@@ -1,15 +1,15 @@
 use crate::known_param::Conversions;
 use crate::operation::Endpoint;
+use crate::request::ScenarioRequest;
 use crate::request_param::RequestParam;
 use crate::scenario::Scenario;
-use crate::service::Request;
 use http::StatusCode;
 use instructions::{Mutagen, MutagenInstruction, RequestPart};
 use itertools::Itertools;
 use lazy_static::lazy_static;
-use tracing::debug;
 use openapi_utils::{OperationExt, ParameterExt};
 use std::cmp::Ordering;
+use tracing::debug;
 
 mod bool_type;
 pub mod instructions;
@@ -290,20 +290,23 @@ impl Mutator {
         // scenarios
     }
 
-    fn request_from_instructions(mutations: &[&Mutation]) -> Request {
-        let mut request = Request::new();
-        let mut query_params = Vec::new();
+    fn request_from_instructions(mutations: &[&Mutation]) -> ScenarioRequest {
+        let mut request = crate::request::RequestBuilder::new();
         for mutation in mutations {
             match mutation.mutagen.request_part {
-                RequestPart::ContentType => request = request.content_type(mutation.value()),
-                RequestPart::Method => request = request.set_method(mutation.value()),
-                RequestPart::Path => request = request.path(mutation.value()),
-                RequestPart::AnyParam => query_params.push(mutation.param_value()),
-                _ => {} //unimplemented!("We do not know how to mutate this endpoint level item. {:?}", instruction.request_part),
-            }
+                RequestPart::ContentType => request.content_type(mutation.value()),
+                RequestPart::Method => request.method(mutation.value()),
+                RequestPart::Path => request.path(mutation.value()),
+                RequestPart::AnyParam => request.query_params(mutation.param_value()),
+                RequestPart::RequiredParam => request.query_params(mutation.param_value()),
+                RequestPart::OptionalParam => request.query_params(mutation.param_value()),
+                _ => unimplemented!(
+                    "We do not know how to mutate this endpoint level item. {:?}",
+                    mutation
+                ),
+            };
         }
-        request = request.query_params(query_params);
-        request
+        request.build()
     }
 
     // fn mutations_from_mutagen_body(
@@ -336,7 +339,6 @@ impl Mutator {
         if !endpoint.method.required_parameters().is_empty() {
             params.extend(endpoint.method.required_parameters());
         }
-
 
         params
             .iter()

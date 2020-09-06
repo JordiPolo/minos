@@ -1,6 +1,6 @@
+use rand::seq::SliceRandom;
 use serde::Deserialize;
 use std::collections::BTreeMap;
-use rand::seq::SliceRandom;
 
 // StringOrArray and Raw to allow either strings or list of strings
 #[derive(Deserialize, Debug, PartialEq, Clone)]
@@ -51,20 +51,21 @@ impl Conversions {
                 result.insert(path, keys);
             }
         }
-        ConversionView { paths: result}
+        ConversionView { paths: result }
     }
 
     fn _read(conversions: &str) -> Result<Conversions, std::io::Error> {
         let filename = shellexpand::tilde(conversions).into_owned();
         let filedata = std::fs::read_to_string(&filename)?;
-        let deserialized_map: Conversions = serde_yaml::from_str(&filedata).expect(&format!(
-            "The file {} could not be deserialized as a conversions YAML file.",
-            conversions
-        ));
-        Ok(deserialized_map)
+        match serde_yaml::from_str(&filedata) {
+            Err(_) => panic!(
+                "The file {} could not be deserialized as a conversions YAML file.",
+                conversions
+            ),
+            Ok(deserialized_map) => Ok(deserialized_map),
+        }
     }
 }
-
 
 // This is a view of known parameters for a particular endpoint (path)
 // This is from where we can retrieve known parameters
@@ -77,7 +78,7 @@ impl<'a> ConversionView<'a> {
     pub fn param_value(&self, name: &str) -> Option<String> {
         let mut matches = self.matches(name);
 
-        if matches.len() == 0 {
+        if matches.is_empty() {
             return None;
         }
 
@@ -89,9 +90,13 @@ impl<'a> ConversionView<'a> {
         let values: Vec<&&BTreeMap<String, StringOrArray>> = matches.values().collect();
         let value_list = &values[0].get(name).unwrap().0;
 
-        Some(value_list.choose(&mut rand::thread_rng()).unwrap().to_string())
+        Some(
+            value_list
+                .choose(&mut rand::thread_rng())
+                .unwrap()
+                .to_string(),
+        )
     }
-
 
     // a pattern may be /users/{uuid}/friends/{uuid2}
     // TODO: use the logic above to use non "/" if possible
@@ -103,7 +108,7 @@ impl<'a> ConversionView<'a> {
                 let random_value = &value.0.choose(&mut rand::thread_rng()).unwrap();
                 result = str::replace(pattern, &format!("{{{}}}", key), random_value)
             }
-            if !result.contains("{") {
+            if !result.contains('{') {
                 return Some(result);
             }
         }
@@ -112,10 +117,10 @@ impl<'a> ConversionView<'a> {
 
     // TODO: not clone
     fn matches(&self, name: &str) -> BTreeMap<&String, &BTreeMap<String, StringOrArray>> {
-        self.paths.clone()
-        .into_iter()
-        .filter(|(_name, path)| path.get(name).is_some())
-        .collect()
+        self.paths
+            .clone()
+            .into_iter()
+            .filter(|(_name, path)| path.get(name).is_some())
+            .collect()
     }
-
 }

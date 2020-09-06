@@ -1,114 +1,45 @@
-use std::fmt;
-use crate::cli_args::*;
-use crate::request_param::RequestParam;
+//use std::fmt;
+//use crate::cli_args::*;
 use crate::authentication::Authentication;
-use tracing::{debug, info};
 use rand::Rng;
-use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE};
-use reqwest::Method;
+use reqwest::header::{HeaderMap, HeaderValue};
+use tracing::debug;
+//use reqwest::Method;
+use daedalus::Request;
 
 #[derive(Debug)]
-pub struct Request {
-    path: String,
-    content_type: String,
-    method: String,
-    query_params: Vec<RequestParam>,
+pub struct RunnableRequest {
+    request: http::request::Request<hyper::Body>,
 }
 
-impl Request {
-    pub fn new() -> Request {
-        Request {
-            path: "".to_string(),
-            content_type: "json".to_string(),
-            method: "get".to_string(),
-            query_params: vec![],
-        }
+impl RunnableRequest {
+    fn new(minos_request: http::request::Request<hyper::Body>) -> Self {
+        let mut request = minos_request; //.http_request();
+        Self::headers(&mut request.headers_mut());
+        RunnableRequest { request }
     }
 
-    pub fn path(mut self, new_path: String) -> Self {
-        self.path = new_path;
-        self
+    pub fn http_request(self) -> http::request::Request<hyper::Body> {
+        self.request
     }
 
-    pub fn query_params(mut self, params: Vec<RequestParam>) -> Self {
-        self.query_params = params;
-        self
+    pub fn trace_id<'a>(&'a self) -> &'a str {
+        self.request.headers()["X-B3-TraceID"].to_str().unwrap()
     }
 
-    pub fn content_type(mut self, content_type: String) -> Self {
-        self.content_type = content_type;
-        self
-    }
-
-    pub fn set_method(mut self, method: String) -> Self {
-        self.method = method;
-        self
-    }
-
-    pub fn method(&self) -> Method {
-        Method::from_bytes(self.method.as_bytes()).unwrap()
-    }
-
-    fn is_method_with_data(&self) -> bool {
-        self.method() == Method::PATCH
-            || self.method() == Method::POST
-            || self.method() == Method::PUT
-    }
-
-    pub fn headers(&self) -> HeaderMap {
-        let mut request_headers = HeaderMap::new();
+    fn headers(request_headers: &mut HeaderMap<HeaderValue>) {
         let mut rng = rand::thread_rng();
         let trace_id = format!("{:x}", rng.gen::<u128>());
         let span_id = format!("{:x}", rng.gen::<u64>());
         // TODO: Verify apps receive and use thsese keys
-        request_headers.insert("Accept", HeaderValue::from_static("application/json"));
         request_headers.insert("X-B3-Sampled", HeaderValue::from_static("0"));
         request_headers.insert("X-B3-TraceId", HeaderValue::from_str(&trace_id).unwrap());
         request_headers.insert("X-B3-SpanId", HeaderValue::from_str(&span_id).unwrap());
-
-        if self.is_method_with_data() {
-            request_headers.insert(
-                CONTENT_TYPE,
-                HeaderValue::from_str(&self.content_type).unwrap(),
-            );
-        }
-        request_headers.insert(ACCEPT, HeaderValue::from_str(&self.content_type).unwrap());
-        request_headers
-    }
-
-    pub fn path_and_query(&self) -> String {
-        let mut param_string = String::new();
-        if !self.query_params.is_empty() {
-            param_string = "?".to_string();
-            for query_param in self.query_params.iter() {
-                if query_param.value.is_some() {
-                    param_string.push_str(&format!(
-                        "{}={}&",
-                        query_param.name,
-                        query_param.value.as_ref().unwrap()
-                    ));
-                }
-            }
-            let len = param_string.len();
-            param_string.truncate(len - 1);
-        }
-        format!("{}{}", self.path, param_string)
-    }
-
-    pub fn url(&self, base_url: &str, base_path: &str) -> String {
-        format!("{}{}{}", base_url, base_path, self.path_and_query())
-    }
-}
-
-impl fmt::Display for Request {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} {}", self.method, self.path_and_query())
     }
 }
 
 pub struct Service {
     base_url: String,
-    base_path: String,
     client: reqwest::Client, //reqwest::blocking::Client,
     authentication: Authentication,
 }
@@ -120,47 +51,32 @@ pub struct ServiceResponse {
 }
 
 impl Service {
-    pub fn new(config: &CLIArgs, base_path: String) -> Self {
+    pub fn new(base_url: &str) -> Self {
         let client = reqwest::Client::new();
         let authentication = Authentication::new();
         Service {
-            base_url: config.base_url.clone(),
-            base_path,
+            base_url: base_url.to_owned(),
             client,
             authentication,
         }
     }
-
-    pub fn build_hyper_request(&self, request: &Request) -> http::request::Request<hyper::Body> {
-        let endpoint = request.url(&self.base_url, &self.base_path);
-        info!("Sending request {:?}", request);
-        debug!("Request headers {:?}", request.headers());
-
-        // Create http request
-        let mut builder = http::request::Builder::new();
-
-        let headers = builder.headers_mut().unwrap();
-        for (key, value) in request.headers().iter() {
-            headers.insert(key, value.clone());
-        }
-
-        let mut requ = builder
-            .method(request.method())
-            .uri(&endpoint)
-            .body(hyper::Body::from(""))
-            .expect(&format!(
-                "{:?} is not a valid URL. Check the base URL.",
-                &endpoint
-            ));
-            self.authentication.authenticate(&mut requ);
-        requ
+    pub fn runnable_request(&self, minos_request: Request) -> RunnableRequest {
+        let mut request = minos_request;
+        *request.uri_mut() = format!("{}{}", self.base_url, request.uri())
+            .parse()
+            .unwrap();
+        let mut request = request.map(|body| hyper::Body::from(body));
+        self.authentication.authenticate(&mut request);
+        RunnableRequest::new(request)
     }
 
     // TODO: when network does not find the address this is blocking the thread
-    pub async fn send(&self, request: &Request) -> Result<ServiceResponse, reqwest::Error> {
-        let requ = self.build_hyper_request(request);
+    pub async fn send(&self, request: RunnableRequest) -> Result<ServiceResponse, reqwest::Error> {
+        // TODO: ugly
+        let requ = request.http_request();
+        debug!("Sending request {:?}", requ);
+        debug!("Request headers {:?}", requ.headers());
 
-        //launch request as a request request wich implies copying, TODO: prevent copying
         let resp = self
             .client
             .request(
@@ -189,4 +105,3 @@ impl Service {
         })
     }
 }
-

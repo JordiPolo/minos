@@ -7,7 +7,6 @@ use crate::mutation::Mutagen;
 use openapi_utils::{ParameterDataExt, ParameterExt};
 use openapiv3::Type;
 
-
 /// TODO: How to make sure we generate for all the Mutagens?
 pub fn mutate(
     param: &openapiv3::Parameter,

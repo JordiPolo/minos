@@ -1,13 +1,13 @@
 use crate::cli_args::PerformanceCommand;
-use crate::scenario;
-use crate::service;
 use crate::reporter::print_value;
+use crate::service;
+use daedalus::Scenario;
 use goose::prelude::*;
 use goose::{GooseAttack, GooseConfiguration};
+use indicatif::{ProgressBar, ProgressStyle};
 use lazy_static::lazy_static;
 use reqwest::header::{HeaderMap, HeaderValue};
 use std::sync::RwLock;
-use indicatif::{ProgressBar, ProgressStyle};
 use std::{thread, time};
 
 lazy_static! {
@@ -16,7 +16,7 @@ lazy_static! {
 }
 
 pub fn run<'a>(
-    scenarios: impl Iterator<Item = scenario::Scenario<'a>>,
+    scenarios: impl Iterator<Item = Scenario<'a>>,
     service: &service::Service,
     command: PerformanceCommand,
 ) {
@@ -29,7 +29,7 @@ pub fn run<'a>(
         // Need to drop the rwlock after this block so we can read it
         let mut req_list = PATH_HEADER_LIST.write().unwrap();
         for scenario in scenarios {
-            let request = service.build_hyper_request(&scenario.request);
+            let request = service.runnable_request(scenario.request()).http_request();
             let url = reqwest::Url::parse(&request.uri().to_string()).unwrap();
             req_list.push((url, request.headers().clone()));
         }
@@ -44,9 +44,11 @@ pub fn run<'a>(
         let slot = slot as u64;
         let bar = ProgressBar::new(100);
 
-        bar.set_style(ProgressStyle::default_bar()
-            .template("[{elapsed_precise}] {bar:60.green/magenta} {percent:>0}% {msg}")
-            .progress_chars("▌▌-"));
+        bar.set_style(
+            ProgressStyle::default_bar()
+                .template("[{elapsed_precise}] {bar:60.green/magenta} {percent:>0}% {msg}")
+                .progress_chars("▌▌-"),
+        );
 
         for _ in 0..100 {
             bar.inc(1);
@@ -95,8 +97,8 @@ fn config(command: PerformanceCommand) -> GooseConfiguration {
     configuration.run_time = time.clone(); // End test after time after users all online
     configuration.reset_stats = true; // Stats reset after hatching is completed so only count working hard
     configuration.status_codes = false; // Add or not stats about status codes
-    configuration.only_summary = true;  // kill both runnig and final stats :(
-    // Stuff I do not care about but need to be set for config not to blow up
+    configuration.only_summary = true; // kill both runnig and final stats :(
+                                       // Stuff I do not care about but need to be set for config not to blow up
     configuration.stats_log_format = "json".to_string();
     configuration.log_file = "/tmp/minos_performance".to_string();
     configuration.debug_log_format = "json".to_string();
@@ -115,7 +117,6 @@ fn config(command: PerformanceCommand) -> GooseConfiguration {
     configuration
 }
 
-
 // TODO: make code in Goose public and remove this
 // Code lifted from the Goose library.
 // Ideally we could access the already parsed information but it is private
@@ -124,13 +125,10 @@ fn config(command: PerformanceCommand) -> GooseConfiguration {
 use regex::Regex;
 use std::str::FromStr;
 
-
 fn parse_timespan(time_str: &str) -> usize {
     match usize::from_str(time_str) {
         // If an integer is passed in, assume it's seconds
-        Ok(t) => {
-            t
-        }
+        Ok(t) => t,
         // Otherwise use a regex to extract hours, minutes and seconds from string.
         Err(_) => {
             let re = Regex::new(r"((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?)s)?")

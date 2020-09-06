@@ -1,6 +1,6 @@
 use tracing::debug;
 
-pub fn read(filename: &str) -> openapiv3::OpenAPI {
+pub(crate) fn read(filename: &str) -> openapiv3::OpenAPI {
     match std::fs::read_to_string(filename) {
         Ok(data) => {
             let spec = serde_yaml::from_str(&data)

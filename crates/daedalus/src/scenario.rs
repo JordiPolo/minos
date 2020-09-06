@@ -1,14 +1,14 @@
 use crate::mutation::Mutation;
 use crate::operation;
-use crate::service::Request;
+use crate::request::{Request, ScenarioRequest};
+use http::StatusCode;
 use openapi_utils::OperationExt;
-use reqwest::StatusCode;
 
 #[derive(Debug)]
 pub struct Scenario<'a> {
     pub endpoint: &'a operation::Endpoint,
     pub instructions: Vec<Mutation>,
-    pub request: Request,
+    request: ScenarioRequest,
 }
 
 #[derive(Debug)]
@@ -19,10 +19,10 @@ pub struct ScenarioExpectation<'a> {
 }
 
 impl<'a> Scenario<'a> {
-    pub fn new(
+    pub(crate) fn new(
         endpoint: &'a operation::Endpoint,
         instructions: Vec<Mutation>,
-        request: Request,
+        request: ScenarioRequest,
     ) -> Self {
         //, subject: ScenarioSubject) -> Self {
         Scenario {
@@ -31,6 +31,11 @@ impl<'a> Scenario<'a> {
             request,
             //   subject,
         }
+    }
+
+    pub fn request(&self) -> Request {
+        //http::Request<&'static str> {
+        self.request.clone()
     }
 
     pub fn expectation(&self) -> ScenarioExpectation<'_> {
@@ -53,25 +58,3 @@ impl<'a> Scenario<'a> {
         StatusCode::OK
     }
 }
-
-// impl From<Vec<Mutation>> for Request {
-//     fn from(mutations: Vec<Mutation>) -> Self {
-//         let mut request = Request::new();
-//         let mut query_params = Vec::new();
-//         for mutation in mutations {
-//             match mutation.mutagen.request_part {
-//                 RequestPart::ContentType => {
-//                     request = request.content_type(mutation.value.clone().unwrap())
-//                 }
-//                 RequestPart::Method => {
-//                     request = request.set_method(mutation.value.clone().unwrap())
-//                 }
-//                 RequestPart::Path => request = request.path(mutation.value.clone().unwrap()),
-//                 RequestPart::AnyParam => query_params.push(mutation.param_value.clone().unwrap()),
-//                 _ => {} //unimplemented!("We do not know how to mutate this endpoint level item. {:?}", instruction.request_part),
-//             }
-//         }
-//         request = request.query_params(query_params);
-//         request
-//     }
-// }

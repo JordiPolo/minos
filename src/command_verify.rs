@@ -1,9 +1,9 @@
 use crate::reporter;
-use crate::scenario::Scenario;
 use crate::service;
 use crate::validator;
-use tracing::debug;
+use daedalus::Scenario;
 use std::time::Instant;
+use tracing::debug;
 
 pub fn run<'a>(
     scenarios: impl Iterator<Item = Scenario<'a>>,
@@ -25,11 +25,11 @@ async fn run_testing_scenarios<'a>(
 
     for scenario in scenarios {
         let path = scenario.endpoint.path_name.clone();
-        println!("{:?}", scenario.request.to_string());
+        debug!("{:?}", scenario.request());
 
-        reporter::print_mutation_scenario(&scenario);
-
-        let response = service.send(&scenario.request).await;
+        let runnable = service.runnable_request(scenario.request());
+        reporter::print_runnable_scenario(&scenario, &runnable);
+        let response = service.send(runnable).await;
 
         match response {
             Err(e) => {

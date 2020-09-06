@@ -1,5 +1,5 @@
 use crate::request_param::RequestParam;
-use reqwest::StatusCode;
+use http::StatusCode;
 use std::fmt;
 
 #[derive(Debug, PartialEq, Clone)]

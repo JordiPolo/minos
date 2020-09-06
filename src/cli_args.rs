@@ -1,100 +1,112 @@
-use structopt::StructOpt;
+//use structopt::StructOpt;
+use clap::Clap;
 
 pub fn config() -> CLIArgs {
-    CLIArgs::from_args()
+    CLIArgs::parse()
 }
 
-#[derive(StructOpt)]
-#[structopt(
+impl CLIArgs {
+    pub fn generator_config(&self) -> daedalus::GeneratorConfig {
+        daedalus::GeneratorConfig::new(
+            self.filename.clone(),
+            self.conv_filename.clone(),
+            self.scenarios_all_codes,
+            self.matches.clone(),
+        )
+    }
+}
+
+#[derive(Clap)]
+#[clap(
     name = "Minos",
     about = "Minos tests that your OpenAPI file matches your live API."
 )]
 pub struct CLIArgs {
-    #[structopt(
+    #[clap(
         short = "f",
         long = "file",
-        help = "Input OpenAPI file",
+        about = "Input OpenAPI file",
         default_value = "doc/contracts/openapi.yaml"
     )]
     pub filename: String,
 
-    #[structopt(
+    #[clap(
         short = "u",
         long = "url",
-        help = "URL where the server is running (it can also be in localhost)",
+        about = "URL where the server is running (it can also be in localhost)",
         default_value = "http://localhost:3000"
     )]
     pub base_url: String,
 
-    #[structopt(
+    #[clap(
         short = "c",
         long = "conversions",
-        help = "The location of the conversions file with parameter values for this run.",
+        about = "The location of the conversions file with parameter values for this run.",
         default_value = "./conversions.yml"
     )]
     pub conv_filename: String,
 
-    #[structopt(
+    #[clap(
         short = "m",
         long = "matches",
-        help = "Only generate scenarios for paths matching certain expression.",
+        about = "Only generate scenarios for paths matching certain expression.",
         default_value = "/"
     )]
     pub matches: String,
 
-    #[structopt(
+    #[clap(
         short = "a",
         long = "all-codes",
-        help = "Generate scenarios for all codes. Default is to generate only scenarios with 200 codes."
+        about = "Generate scenarios for all codes. Default is to generate only scenarios with 200 codes."
     )]
     pub scenarios_all_codes: bool,
 
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     pub command: Command,
 }
 
-#[derive(StructOpt)]
+#[derive(Clap)]
 pub enum Command {
-    #[structopt(about = "Shows generated scenarios but does not run them.")]
+    #[clap(about = "Shows generated scenarios but does not run them.")]
     Ls,
 
     Performance(PerformanceCommand),
 
-    #[structopt(
+    #[clap(
         about = "Runs auto-generated scenarios to verify the service follows the openapi contract"
     )]
     Verify {
-        #[structopt(
+        #[clap(
             short = "n",
             long = "allow-missing-rs",
-            help = "Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses."
+            about = "Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses."
         )]
         without_rs: bool,
     },
 }
 
-#[derive(StructOpt)]
-#[structopt(about = "Runs auto-genenerated scenarios as performance tests.")]
+#[derive(Clap)]
+#[clap(about = "Runs auto-genenerated scenarios as performance tests.")]
 pub struct PerformanceCommand {
-    #[structopt(
+    #[clap(
         short = "t",
         long = "threads",
-        help = "Number of threads(users) running the performance suite. More users more resources used.",
+        about = "Number of threads(users) running the performance suite. More users more resources used.",
         default_value = "16"
     )]
     pub users: usize,
-    #[structopt(
+    #[clap(
         short = "r",
         long = "requests",
-        help = "Number of maximum requests per second to run against the whole service.",
+        about = "Number of maximum requests per second to run against the whole service.",
         default_value = "100"
     )]
     pub request_per_second: usize,
 
-    #[structopt(
+    #[clap(
         short = "l",
         long = "length",
-        help = "Length of test, as readable time (300s, 20m, 3h, 1h30m, etc.) .",
+        about = "Length of test, as readable time (300s, 20m, 3h, 1h30m, etc.) .",
         default_value = "90s"
     )]
     pub time: String,

@@ -4,12 +4,12 @@ use openapi_utils::{ReferenceOrExt, ResponseExt};
 
 use crate::error;
 use crate::error::Disparity;
-//use crate::scenario::ScenarioExpectation;
 use crate::service;
+use daedalus::ScenarioExpectation;
 
 pub fn validate(
     response: service::ServiceResponse,
-    expectation: crate::scenario::ScenarioExpectation,
+    expectation: ScenarioExpectation,
     allow_missing_rs: bool,
 ) -> Result<(), Disparity> {
     if response.status != expectation.status_code {

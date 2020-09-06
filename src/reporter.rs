@@ -3,7 +3,8 @@ use std::io::Write;
 use termcolor::{BufferedStandardStream, Color, ColorChoice, ColorSpec, WriteColor};
 
 use crate::error::Disparity;
-use crate::scenario::Scenario;
+use crate::service::RunnableRequest;
+use daedalus::Scenario;
 
 const LIGHT_BLUE: Color = Color::Rgb(150, 150, 255);
 const BORING_GRAY: Color = Color::Rgb(119, 119, 119);
@@ -22,6 +23,12 @@ pub fn test_failed(error: Disparity) {
 
 pub fn test_passed() {
     print_success("Test passed.");
+}
+
+pub fn print_runnable_scenario(scenario: &Scenario, request: &RunnableRequest) {
+    print_mutation_scenario(scenario);
+    let mut printer = Printer::new();
+    printer.print_color(&format!("TraceId: {:?}", request.trace_id()), BORING_GRAY);
 }
 
 pub fn print_mutation_scenario(scenario: &Scenario) {
@@ -44,7 +51,7 @@ pub fn print_mutation_scenario(scenario: &Scenario) {
         } else {
             Color::Blue
         };
-      //  printer.print_color(mutation, color);
+        //  printer.print_color(mutation, color);
     }
     printer.print_color(
         format!(
@@ -53,10 +60,10 @@ pub fn print_mutation_scenario(scenario: &Scenario) {
         ),
         Color::Blue,
     );
-    printer.print_color(
-        &format!("TraceId: {:?}", scenario.request.headers()["X-B3-TraceID"]),
-        BORING_GRAY,
-    );
+    // printer.print_color(
+    //     &format!("TraceId: {:?}", scenario.request.trace_id()),
+    //     BORING_GRAY,
+    // );
 }
 
 use itertools::Itertools;
