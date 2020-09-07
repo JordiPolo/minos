@@ -9,7 +9,7 @@ use daedalus::ScenarioExpectation;
 
 pub fn validate(
     response: service::ServiceResponse,
-    expectation: ScenarioExpectation,
+    expectation: &ScenarioExpectation,
     allow_missing_rs: bool,
 ) -> Result<(), Disparity> {
     if response.status != expectation.status_code {

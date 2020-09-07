@@ -30,13 +30,16 @@ pub enum MutationValue {
 }
 
 impl Mutation {
-    pub fn new(mutagen: instructions::MutagenInstruction, value: String) -> Self {
+    pub(crate) fn new(mutagen: instructions::MutagenInstruction, value: String) -> Self {
         Mutation {
             mutagen,
             payload: MutationValue::Value(value),
         }
     }
-    pub fn new_param(mutagen: instructions::MutagenInstruction, value: RequestParam) -> Self {
+    pub(crate) fn new_param(
+        mutagen: instructions::MutagenInstruction,
+        value: RequestParam,
+    ) -> Self {
         Mutation {
             mutagen,
             payload: MutationValue::Param(value),
@@ -101,13 +104,13 @@ impl fmt::Display for Mutation {
     }
 }
 
-pub struct Mutator {
+pub(crate) struct Mutator {
     known_params: Conversions,
     run_all_codes: bool,
 }
 
 impl Mutator {
-    pub fn new(conversions: &str, run_all_codes: bool) -> Self {
+    pub(crate) fn new(conversions: &str, run_all_codes: bool) -> Self {
         Mutator {
             known_params: Conversions::new(conversions),
             run_all_codes,
@@ -115,7 +118,7 @@ impl Mutator {
     }
 
     // TODO: If no mutation is found for one of the required elements, print it out
-    pub fn mutate<'a>(&self, endpoint: &'a Endpoint) -> Vec<Scenario<'a>> {
+    pub(crate) fn mutate<'a>(&self, endpoint: &'a Endpoint) -> Vec<Scenario<'a>> {
         let mutations = self.mutations_from_mutagen(&endpoint, instructions::mutagens());
         let query_mutations = self.mutations_from_mutagen_query(&endpoint);
         //        let body_mutations = self.mutations_from_mutagen_body(&endpoint, instructions::schema_mutagens());
@@ -199,7 +202,7 @@ impl Mutator {
                 }
             }
         } else {
-            println!("Could not find a passing scenario for {}. Consider adding information to the conversinons file", endpoint.path_name);
+            println!("Could not find a passing scenario for {}. Consider adding information to the conversions file", endpoint.path_name);
         }
 
         // Run all codes means we let 1 error per scenario.

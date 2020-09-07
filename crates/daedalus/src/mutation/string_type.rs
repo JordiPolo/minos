@@ -3,7 +3,10 @@ use crate::mutation::Mutagen;
 use chrono::prelude::*;
 
 // TODO String type has "pattern"
-pub fn mutate(param: &openapiv3::Parameter, string_type: &openapiv3::StringType) -> ParamMutation {
+pub(crate) fn mutate(
+    param: &openapiv3::Parameter,
+    string_type: &openapiv3::StringType,
+) -> ParamMutation {
     let mut mutations = ParamMutation::new_param(&param);
 
     // First variations we can always produce, then we will create variations which depend on factors

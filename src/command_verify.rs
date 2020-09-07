@@ -24,22 +24,21 @@ async fn run_testing_scenarios<'a>(
     let mut results = Vec::new();
 
     for scenario in scenarios {
-        let path = scenario.endpoint.path_name.clone();
-        debug!("{:?}", scenario.request());
+        let request = scenario.request();
+        let path = request.uri().path().to_owned();
 
-        let runnable = service.runnable_request(scenario.request());
+        let runnable = service.runnable_request(request);
         reporter::print_runnable_scenario(&scenario, &runnable);
         let response = service.send(runnable).await;
-
         match response {
             Err(e) => {
                 reporter::connection_error(e);
                 results.push((path, false));
             }
             Ok(real_response) => {
+                debug!("{:?}", &real_response.body);
                 match validator::validate(real_response, scenario.expectation(), allow_missing_rs) {
                     Err(error) => {
-                        debug!("{:?}", scenario.endpoint);
                         reporter::test_failed(error);
                         results.push((path, false));
                     }

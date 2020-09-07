@@ -5,6 +5,8 @@ use termcolor::{BufferedStandardStream, Color, ColorChoice, ColorSpec, WriteColo
 use crate::error::Disparity;
 use crate::service::RunnableRequest;
 use daedalus::Scenario;
+use tracing::info;
+
 
 const LIGHT_BLUE: Color = Color::Rgb(150, 150, 255);
 const BORING_GRAY: Color = Color::Rgb(119, 119, 119);
@@ -33,16 +35,13 @@ pub fn print_runnable_scenario(scenario: &Scenario, request: &RunnableRequest) {
 
 pub fn print_mutation_scenario(scenario: &Scenario) {
     let mut printer = Printer::new();
+    info!("{:?}", scenario.request());
 
-    let endpoint = &scenario.endpoint;
+  //  let endpoint = &scenario.endpoint;
     let mutations = &scenario.instructions;
 
     printer.print_scenario("Scenario:");
-    printer.print_scenario(format!(
-        "{} {}",
-        endpoint.crud.to_method_name(),
-        endpoint.path_name
-    ));
+    printer.print_scenario(scenario);
     let mut sorted_mutations = mutations.to_owned();
     sorted_mutations.sort(); //_by(|a, b| a.mutagen.expected.cmp(&b.mutagen.expected));
     for mutation in &sorted_mutations {
@@ -51,7 +50,7 @@ pub fn print_mutation_scenario(scenario: &Scenario) {
         } else {
             Color::Blue
         };
-        //  printer.print_color(mutation, color);
+        printer.print_color(mutation, color);
     }
     printer.print_color(
         format!(

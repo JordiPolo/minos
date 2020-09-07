@@ -8,13 +8,13 @@ pub struct RequestParam {
 }
 
 impl RequestParam {
-    pub fn new(name: &str, value: &str) -> Self {
+    pub(crate) fn new(name: &str, value: &str) -> Self {
         RequestParam {
             name: name.to_string(),
             value: Some(value.to_string()),
         }
     }
-    pub fn new2(name: &str, value: Option<String>) -> Self {
+    pub(crate) fn new2(name: &str, value: Option<String>) -> Self {
         RequestParam {
             name: name.to_string(),
             value,

@@ -2,7 +2,10 @@ use crate::mutation::param_mutation::ParamMutation;
 use crate::mutation::Mutagen;
 use openapi_utils::{IntegerTypeExt, ParameterExt};
 
-pub fn mutate(param: &openapiv3::Parameter, the_type: &openapiv3::IntegerType) -> ParamMutation {
+pub(crate) fn mutate(
+    param: &openapiv3::Parameter,
+    the_type: &openapiv3::IntegerType,
+) -> ParamMutation {
     let mut mutations = ParamMutation::new_param(&param);
     let (min, max) = the_type.min_max();
     let avg = max / 2; //(min + max) / 2; if max is max of i64 this will overflow

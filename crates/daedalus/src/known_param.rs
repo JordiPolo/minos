@@ -24,12 +24,12 @@ enum Raw {
 }
 
 #[derive(Debug, PartialEq, Deserialize)]
-pub struct Conversions {
+pub(crate) struct Conversions {
     paths: BTreeMap<String, BTreeMap<String, StringOrArray>>,
 }
 
 impl Conversions {
-    pub fn new(filename: &str) -> Self {
+    pub(crate) fn new(filename: &str) -> Self {
         match Self::_read(filename) {
             Err(_) => {
                 println!(
@@ -44,7 +44,7 @@ impl Conversions {
         }
     }
 
-    pub fn for_path<'a>(&'a self, pattern: &str) -> ConversionView {
+    pub(crate) fn for_path<'a>(&'a self, pattern: &str) -> ConversionView {
         let mut result = BTreeMap::new();
         for (path, keys) in &self.paths {
             if pattern.contains(path) {
@@ -70,12 +70,12 @@ impl Conversions {
 // This is a view of known parameters for a particular endpoint (path)
 // This is from where we can retrieve known parameters
 #[derive(Debug, PartialEq)]
-pub struct ConversionView<'a> {
+pub(crate) struct ConversionView<'a> {
     paths: BTreeMap<&'a String, &'a BTreeMap<String, StringOrArray>>,
 }
 
 impl<'a> ConversionView<'a> {
-    pub fn param_value(&self, name: &str) -> Option<String> {
+    pub(crate) fn param_value(&self, name: &str) -> Option<String> {
         let mut matches = self.matches(name);
 
         if matches.is_empty() {
@@ -100,7 +100,7 @@ impl<'a> ConversionView<'a> {
 
     // a pattern may be /users/{uuid}/friends/{uuid2}
     // TODO: use the logic above to use non "/" if possible
-    pub fn retrieve_known_path(&self, pattern: &str) -> Option<String> {
+    pub(crate) fn retrieve_known_path(&self, pattern: &str) -> Option<String> {
         let mut result = String::new();
 
         for (path, keys) in self.paths.clone() {

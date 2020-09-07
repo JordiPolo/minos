@@ -41,7 +41,7 @@ impl Endpoint {
     }
 
     // TODO: Do not limit to GET
-    pub fn new_supported(path_name: &str, methods: &openapiv3::PathItem) -> Vec<Self> {
+    pub(crate) fn new_supported(path_name: &str, methods: &openapiv3::PathItem) -> Vec<Self> {
         Self::create_supported_endpoint(path_name, methods)
             .into_iter()
             .filter(|x| x.crud == CRUD::Show || x.crud == CRUD::Index)

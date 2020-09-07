@@ -2,7 +2,7 @@ use crate::request_param::RequestParam;
 use http::header::{HeaderValue, ACCEPT, CONTENT_TYPE};
 use http::Method;
 
-// This is the only thing users of this library will see
+/// This is a request that can be consumed by the users of this library
 pub type Request = http::Request<&'static str>;
 
 // This is the struct that we will store on each scenario.
@@ -12,7 +12,7 @@ pub type Request = http::Request<&'static str>;
 // To allow them to do whatever they want, we provide a copy
 #[derive(Debug)]
 pub(crate) struct ScenarioRequest {
-    request: http::Request<&'static str>,
+    pub(crate) request: http::Request<&'static str>,
 }
 
 impl ScenarioRequest {
@@ -37,7 +37,7 @@ pub(crate) struct RequestBuilder {
 }
 
 impl RequestBuilder {
-    pub fn new() -> RequestBuilder {
+    pub(crate) fn new() -> RequestBuilder {
         RequestBuilder {
             path: "".to_string(),
             content_type: "json".to_string(),
@@ -46,27 +46,27 @@ impl RequestBuilder {
         }
     }
 
-    pub fn path(&mut self, new_path: String) -> &mut Self {
+    pub(crate) fn path(&mut self, new_path: String) -> &mut Self {
         self.path = new_path;
         self
     }
 
-    pub fn query_params(&mut self, params: RequestParam) -> &mut Self {
+    pub(crate) fn query_params(&mut self, params: RequestParam) -> &mut Self {
         self.query_params.push(params);
         self
     }
 
-    pub fn content_type(&mut self, content_type: String) -> &mut Self {
+    pub(crate) fn content_type(&mut self, content_type: String) -> &mut Self {
         self.content_type = content_type;
         self
     }
 
-    pub fn method(&mut self, method: String) -> &mut Self {
+    pub(crate) fn method(&mut self, method: String) -> &mut Self {
         self.method = method;
         self
     }
 
-    pub fn build(self) -> ScenarioRequest {
+    pub(crate) fn build(self) -> ScenarioRequest {
         let mut builder = http::request::Builder::new();
 
         let headers = builder.headers_mut().unwrap();
