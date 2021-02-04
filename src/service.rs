@@ -23,7 +23,7 @@ impl RunnableRequest {
         self.request
     }
 
-    pub fn trace_id<'a>(&'a self) -> &'a str {
+    pub fn trace_id(&self) -> &str {
         self.request.headers()["X-B3-TraceID"].to_str().unwrap()
     }
 
@@ -65,7 +65,7 @@ impl Service {
         *request.uri_mut() = format!("{}{}", self.base_url, request.uri())
             .parse()
             .unwrap();
-        let mut request = request.map(|body| hyper::Body::from(body));
+        let mut request = request.map(hyper::Body::from);
         self.authentication.authenticate(&mut request);
         RunnableRequest::new(request)
     }

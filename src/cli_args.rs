@@ -23,7 +23,7 @@ impl CLIArgs {
 )]
 pub struct CLIArgs {
     #[clap(
-        short = "f",
+        short = 'f',
         long = "file",
         about = "Input OpenAPI file",
         default_value = "doc/contracts/openapi.yaml"
@@ -31,7 +31,7 @@ pub struct CLIArgs {
     pub filename: String,
 
     #[clap(
-        short = "u",
+        short = 'u',
         long = "url",
         about = "URL where the server is running (it can also be in localhost)",
         default_value = "http://localhost:3000"
@@ -39,7 +39,7 @@ pub struct CLIArgs {
     pub base_url: String,
 
     #[clap(
-        short = "c",
+        short = 'c',
         long = "conversions",
         about = "The location of the conversions file with parameter values for this run.",
         default_value = "./conversions.yml"
@@ -47,7 +47,7 @@ pub struct CLIArgs {
     pub conv_filename: String,
 
     #[clap(
-        short = "m",
+        short = 'm',
         long = "matches",
         about = "Only generate scenarios for paths matching certain expression.",
         default_value = "/"
@@ -55,7 +55,7 @@ pub struct CLIArgs {
     pub matches: String,
 
     #[clap(
-        short = "a",
+        short = 'a',
         long = "all-codes",
         about = "Generate scenarios for all codes. Default is to generate only scenarios with 200 codes."
     )]
@@ -77,7 +77,7 @@ pub enum Command {
     )]
     Verify {
         #[clap(
-            short = "n",
+            short = 'n',
             long = "allow-missing-rs",
             about = "Do not fail the test if the response body do not have a schema defining it. Useful if the API does not document the application error responses."
         )]
@@ -89,14 +89,14 @@ pub enum Command {
 #[clap(about = "Runs auto-genenerated scenarios as performance tests.")]
 pub struct PerformanceCommand {
     #[clap(
-        short = "t",
+        short = 't',
         long = "threads",
         about = "Number of threads(users) running the performance suite. More users more resources used.",
         default_value = "16"
     )]
     pub users: usize,
     #[clap(
-        short = "r",
+        short = 'r',
         long = "requests",
         about = "Number of maximum requests per second to run against the whole service.",
         default_value = "100"
@@ -104,7 +104,7 @@ pub struct PerformanceCommand {
     pub request_per_second: usize,
 
     #[clap(
-        short = "l",
+        short = 'l',
         long = "length",
         about = "Length of test, as readable time (300s, 20m, 3h, 1h30m, etc.) .",
         default_value = "90s"

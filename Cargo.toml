@@ -22,7 +22,7 @@ serde_json = "1.0"
 daedalus = { path = "crates/daedalus" }
 
 termcolor = "1.0"
-rand = "0.7"
+rand = "0.8"
 openapiv3 = "0.3"
 #openapi_utils = { path = "../../oasproxy/openapi_utils" }
 openapi_utils = "0.2"
@@ -31,22 +31,40 @@ valico = "3"
 tracing = { version = "0.1", default-features = false, features = ["log", "std"] }
 tracing-subscriber = "0.2"
 
-itertools = "0.9"
-comfy-table = "1.0"
+itertools = "0.10"
+comfy-table = "2.0"
 lazy_static = "*"
 reqwest = { version = "0.10", default-features = false, features = ["json", "rustls-tls"] }
-hyper = "*"
+hyper = { version = "0.14", default-features = false, features = ["client", "http1", "stream", "runtime"] }
 http = "*"
 tokio = { version = "0.2", features = ["full"] }
-#mauth-client = { path = "../mauth-client-rust"}
+mauth-client = "*"
 indicatif = "*"
+# clap = "3.0.0-beta.1"
+gumdrop = "*"
 
-clap = "3.0.0-beta.1"
+
+
+
+[dependencies.clap]
+#version = "0.9"
+# default-features = false
+# features = ["rustls"]
+
+git = "https://github.com/clap-rs/clap.git"
+rev = "v3.0.0-beta.2"
+#rev = "90622b397e3d5bd6bdcecfbf1488b13f5a3f8301"
+#rev = "e4c2d09"
+
+
+
 [dependencies.goose]
-version = "0.9"
+#version = "0.10.7"
 default-features = false
 features = ["rustls"]
-#git = "https://github.com/tag1consulting/goose"
+
+git = "https://github.com/tag1consulting/goose"
+rev = "59d7e90"
 
 
 [profile.dev]
@@ -55,6 +73,7 @@ debug = 0
 [profile.release]
 opt-level = 3
 lto = true
-codegen-units = 1 # better optimizations
+#codegen-units = 1 # better optimizations
 incremental = false
 panic = 'abort'
+debug = true

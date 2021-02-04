@@ -56,6 +56,8 @@ impl Generator {
     /// Construction out of the configuration
     pub fn new(config: &GeneratorConfig) -> Self {
         let spec = spec::read(&config.filename).deref_all();
+//        println!("{:?}", spec);
+//        panic!("bye");
         let mutator = mutation::Mutator::new(&config.conv_filename, config.scenarios_all_codes);
         let endpoints = Self::endpoints(spec, &config.matches);
         Generator { mutator, endpoints }
