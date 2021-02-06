@@ -1,0 +1,69 @@
+# The CI now just makes sure it builds
+
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+    - master
+jobs:
+  build:
+    name: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        build: [linux, macos, windows]
+        include:
+        - build: linux
+          os: ubuntu-20.04
+          rust: nightly
+          target: x86_64-unknown-linux-gnu
+        - build: macos
+          os: macos-latest
+          rust: nightly
+          target: x86_64-apple-darwin
+        - build: windows
+          os: windows-2019
+          rust: nightly
+          target: x86_64-pc-windows-msvc
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        profile: minimal
+        override: true
+        target: ${{ matrix.target }}
+
+    - name: Use Cross
+      if: matrix.target != ''
+      run: |
+        cargo install cross
+        echo "CARGO=cross" >> $GITHUB_ENV
+        echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+        echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
+
+    - name: Install musl-gcc for backtrace-sys and openssl dev not sure why.
+      if: matrix.build == 'linux'
+      run: sudo apt-get install musl-tools  pkg-config libssl-dev
+
+    - name: Install openssl on MacOS
+      if: matrix.build == 'macos'
+      run: brew install openssl
+
+    - name: Set Openssl directory for Windows
+      # Because it is installed there already https://github.com/actions/virtual-environments/issues/371
+      if: matrix.build == 'windows'
+      run: set OPENSSL_DIR="C:\Program Files\OpenSSL"
+
+    - name: Set TARGET flags
+      run: echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+
+    - name: Build release binary
+      run: cargo build  --release ${{ env.TARGET_FLAGS }}
