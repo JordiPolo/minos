@@ -22,10 +22,10 @@ jobs:
           os: macos-latest
           rust: nightly
           target: x86_64-apple-darwin
-        - build: windows
-          os: windows-2019
-          rust: nightly
-          target: x86_64-pc-windows-msvc
+        # - build: windows
+        #   os: windows-2019
+        #   rust: nightly
+        #   target: x86_64-pc-windows-msvc
 
     steps:
     - name: Checkout repository

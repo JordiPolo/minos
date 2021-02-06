@@ -20,7 +20,7 @@ on:
 jobs:
   create-release:
     name: create-release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Create artifacts directory
         run: mkdir artifacts
@@ -56,7 +56,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        build: [linux, macos, windows]
+        build: [linux, macos]
         include:
         - build: linux
           os: ubuntu-20.04
@@ -66,10 +66,10 @@ jobs:
           os: macos-latest
           rust: nightly
           target: x86_64-apple-darwin
-        - build: windows
-          os: windows-2019
-          rust: nightly
-          target: x86_64-pc-windows-msvc
+        # - build: windows
+        #   os: windows-2019
+        #   rust: nightly
+        #   target: x86_64-pc-windows-msvc
 
     steps:
     - name: Checkout repository
