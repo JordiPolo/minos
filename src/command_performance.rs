@@ -21,6 +21,7 @@ pub fn run<'a>(
     service: &service::Service,
     command: PerformanceCommand,
 ) {
+
     let config = config(command);
    //let goose_attack = default_attack(command);
 
@@ -35,6 +36,10 @@ pub fn run<'a>(
             let request = service.runnable_request(scenario.request()).http_request();
             let url = reqwest::Url::parse(&request.uri().to_string()).unwrap();
             req_list.push((url, request.headers().clone()));
+        }
+        if req_list.is_empty() {
+            println!("There are 0 scenarios to run performance testing. Consider using a conversions file.");
+            return;
         }
     }
 

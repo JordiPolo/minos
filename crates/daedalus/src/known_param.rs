@@ -101,12 +101,13 @@ impl<'a> ConversionView<'a> {
     // a pattern may be /users/{uuid}/friends/{uuid2}
     // TODO: use the logic above to use non "/" if possible
     pub(crate) fn retrieve_known_path(&self, pattern: &str) -> Option<String> {
-        let mut result = String::new();
-
-        for (path, keys) in self.paths.clone() {
+        for (_path, keys) in self.paths.clone() {
+            let mut result = pattern.to_owned();
             for (key, value) in keys {
                 let random_value = &value.0.choose(&mut rand::thread_rng()).unwrap();
-                result = str::replace(pattern, &format!("{{{}}}", key), random_value)
+                // We want to accumulate the changes of result on itself so things with multiple variables like
+                // /resource/{id}{tag} gets every variable replaced and saved
+                result = str::replace(&result, &format!("{{{}}}", key), random_value)
             }
             if !result.contains('{') {
                 return Some(result);
