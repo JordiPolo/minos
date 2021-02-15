@@ -10,7 +10,7 @@ pub fn run<'a>(
     service: &service::Service,
     allow_missing_rs: bool,
 ) {
-    let mut rt = tokio::runtime::Runtime::new().unwrap();
+    let rt = tokio::runtime::Runtime::new().unwrap();
     let start = Instant::now();
     let results = rt.block_on(run_testing_scenarios(scenarios, &service, allow_missing_rs));
     reporter::run_summary(&results, start);

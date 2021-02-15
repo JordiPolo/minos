@@ -63,7 +63,7 @@ impl<'a> Scenario<'a> {
         &self.expectation
     }
 
-    fn expected_status_code(instructions: &Vec<Mutation>) -> StatusCode {
+    fn expected_status_code(instructions: &[Mutation]) -> StatusCode {
         match instructions
             .iter()
             .find(|i| i.mutagen.expected != StatusCode::OK)

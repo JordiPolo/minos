@@ -22,11 +22,7 @@ impl CLIArgs {
     about = "Minos tests that your OpenAPI file matches your live API."
 )]
 pub struct CLIArgs {
-    #[clap(
-        short = 'f',
-        long = "file",
-        about = "Input OpenAPI file",
-    )]
+    #[clap(short = 'f', long = "file", about = "Input OpenAPI file")]
     pub filename: String,
 
     #[clap(
@@ -40,7 +36,7 @@ pub struct CLIArgs {
     #[clap(
         short = 'c',
         long = "conversions",
-        about = "The location of the conversions file with parameter values for this run.",
+        about = "The location of the conversions file with parameter values for this run."
     )]
     pub conv_filename: Option<String>,
 

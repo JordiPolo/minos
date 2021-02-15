@@ -7,7 +7,6 @@ use crate::service::RunnableRequest;
 use daedalus::Scenario;
 use tracing::info;
 
-
 const LIGHT_BLUE: Color = Color::Rgb(150, 150, 255);
 const BORING_GRAY: Color = Color::Rgb(119, 119, 119);
 
@@ -37,7 +36,7 @@ pub fn print_mutation_scenario(scenario: &Scenario) {
     let mut printer = Printer::new();
     info!("{:?}", scenario.request());
 
-  //  let endpoint = &scenario.endpoint;
+    //  let endpoint = &scenario.endpoint;
     let mutations = &scenario.instructions;
 
     printer.print_scenario("Scenario:");

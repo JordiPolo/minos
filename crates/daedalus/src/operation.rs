@@ -1,5 +1,5 @@
 #[derive(PartialEq, Clone, Debug)]
-pub enum CRUD {
+pub enum Crud {
     Index,
     Create,
     Show,
@@ -8,31 +8,31 @@ pub enum CRUD {
     Patch,
 }
 
-impl CRUD {
+impl Crud {
     // TODO This is kind of a hack to make mutator work with this piece
-    // Probably we want to clean this up or just remove the concept of CRUD
+    // Probably we want to clean this up or just remove the concept of Crud
     // as it is only useful to tell the difference between index and show
     pub fn to_method_name(&self) -> &str {
         match self {
-            CRUD::Index => "GET",
-            CRUD::Show => "GET",
-            CRUD::Create => "POST",
-            CRUD::Update => "PUT",
-            CRUD::Patch => "PATCH",
-            CRUD::Delete => "DELETE",
+            Crud::Index => "GET",
+            Crud::Show => "GET",
+            Crud::Create => "POST",
+            Crud::Update => "PUT",
+            Crud::Patch => "PATCH",
+            Crud::Delete => "DELETE",
         }
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct Endpoint {
-    pub crud: CRUD,
+    pub crud: Crud,
     pub path_name: String,
     pub method: openapiv3::Operation,
 }
 
 impl Endpoint {
-    fn new(crud: CRUD, path_name: &str, method: openapiv3::Operation) -> Self {
+    fn new(crud: Crud, path_name: &str, method: openapiv3::Operation) -> Self {
         Endpoint {
             crud,
             path_name: path_name.to_string(),
@@ -44,7 +44,7 @@ impl Endpoint {
     pub(crate) fn new_supported(path_name: &str, methods: &openapiv3::PathItem) -> Vec<Self> {
         Self::create_supported_endpoint(path_name, methods)
             .into_iter()
-            .filter(|x| x.crud == CRUD::Show || x.crud == CRUD::Index)
+            .filter(|x| x.crud == Crud::Show || x.crud == Crud::Index)
             .collect()
     }
 
@@ -55,19 +55,19 @@ impl Endpoint {
             let maybe_get = methods
                 .get
                 .clone()
-                .map(|get| Endpoint::new(CRUD::Show, path_name, get));
+                .map(|get| Endpoint::new(Crud::Show, path_name, get));
             let maybe_put = methods
                 .put
                 .clone()
-                .map(|put| Endpoint::new(CRUD::Update, path_name, put));
+                .map(|put| Endpoint::new(Crud::Update, path_name, put));
             let maybe_patch = methods
                 .patch
                 .clone()
-                .map(|patch| Endpoint::new(CRUD::Patch, path_name, patch));
+                .map(|patch| Endpoint::new(Crud::Patch, path_name, patch));
             let maybe_delete = methods
                 .delete
                 .clone()
-                .map(|delete| Endpoint::new(CRUD::Delete, path_name, delete));
+                .map(|delete| Endpoint::new(Crud::Delete, path_name, delete));
 
             vec.push(maybe_get);
             vec.push(maybe_put);
@@ -79,11 +79,11 @@ impl Endpoint {
             let maybe_get = methods
                 .get
                 .clone()
-                .map(|get| Endpoint::new(CRUD::Index, path_name, get));
+                .map(|get| Endpoint::new(Crud::Index, path_name, get));
             let maybe_post = methods
                 .put
                 .clone()
-                .map(|post| Endpoint::new(CRUD::Create, path_name, post));
+                .map(|post| Endpoint::new(Crud::Create, path_name, post));
             vec.push(maybe_get);
             vec.push(maybe_post);
             vec.retain(|c| c.is_some());

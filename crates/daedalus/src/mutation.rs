@@ -133,7 +133,7 @@ impl Mutator {
         &self,
         endpoint: &'a Endpoint,
         mutations: &[Mutation],
-        query_mutations: &Vec<Vec<Mutation>>,
+        query_mutations: &[Vec<Mutation>],
     ) -> Vec<Scenario<'a>> {
         let mut scenarios = vec![];
         let mut query_params: Vec<Vec<&Mutation>> = Vec::new();
