@@ -3,13 +3,14 @@ use crate::operation::Endpoint;
 use crate::request::ScenarioRequest;
 use crate::request_param::RequestParam;
 use crate::scenario::Scenario;
+use crate::error::DaedalusError;
 use http::StatusCode;
 use instructions::{Mutagen, MutagenInstruction, RequestPart};
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use openapi_utils::{OperationExt, ParameterExt};
 use std::cmp::Ordering;
-use tracing::debug;
+use tracing::{debug, warn};
 
 mod bool_type;
 pub mod instructions;
@@ -110,11 +111,11 @@ pub(crate) struct Mutator {
 }
 
 impl Mutator {
-    pub(crate) fn new(conversions: &str, run_all_codes: bool) -> Self {
-        Mutator {
-            known_params: Conversions::new(conversions),
+    pub(crate) fn new(conversions_filename: &Option<String>, run_all_codes: bool) -> Result<Self, DaedalusError> {
+        Ok(Mutator {
+            known_params: Conversions::new(conversions_filename)?,
             run_all_codes,
-        }
+        })
     }
 
     // TODO: If no mutation is found for one of the required elements, print it out
@@ -202,7 +203,7 @@ impl Mutator {
                 }
             }
         } else {
-            println!("Could not find a passing scenario for {}. Consider adding information to the conversions file", endpoint.path_name);
+            warn!("Could not find a passing scenario for {}. Consider adding information to the conversions file", endpoint.path_name);
         }
 
         // Run all codes means we let 1 error per scenario.

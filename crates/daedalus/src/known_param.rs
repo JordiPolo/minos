@@ -2,6 +2,9 @@ use rand::seq::SliceRandom;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
+use crate::error::DaedalusError;
+use crate::spec;
+
 // StringOrArray and Raw to allow either strings or list of strings
 #[derive(Deserialize, Debug, PartialEq, Clone)]
 #[serde(from = "Raw")]
@@ -29,18 +32,13 @@ pub(crate) struct Conversions {
 }
 
 impl Conversions {
-    pub(crate) fn new(filename: &str) -> Self {
-        match Self::_read(filename) {
-            Err(_) => {
-                println!(
-                    "Conversions file {} not found. Conversions will not be used",
-                    filename
-                );
-                Conversions {
-                    paths: BTreeMap::new(),
-                }
-            }
-            Ok(d) => d,
+    pub(crate) fn new(ofilename: &Option<String>) -> Result<Self, DaedalusError> {
+        if let Some(filename) = ofilename {
+            spec::read(filename)
+        } else {
+            Ok(Conversions {
+                paths: BTreeMap::new(),
+            })
         }
     }
 
@@ -52,18 +50,6 @@ impl Conversions {
             }
         }
         ConversionView { paths: result }
-    }
-
-    fn _read(conversions: &str) -> Result<Conversions, std::io::Error> {
-        let filename = shellexpand::tilde(conversions).into_owned();
-        let filedata = std::fs::read_to_string(&filename)?;
-        match serde_yaml::from_str(&filedata) {
-            Err(_) => panic!(
-                "The file {} could not be deserialized as a conversions YAML file.",
-                conversions
-            ),
-            Ok(deserialized_map) => Ok(deserialized_map),
-        }
     }
 }
 

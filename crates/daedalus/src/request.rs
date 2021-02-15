@@ -22,7 +22,6 @@ impl ScenarioRequest {
         *clone.uri_mut() = self.request.uri().clone();
         *clone.version_mut() = self.request.version();
         *clone.headers_mut() = self.request.headers().clone();
-        // Self::headers(&mut clone.headers_mut());
         clone
     }
 }

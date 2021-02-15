@@ -26,7 +26,6 @@ pub struct CLIArgs {
         short = 'f',
         long = "file",
         about = "Input OpenAPI file",
-        default_value = "doc/contracts/openapi.yaml"
     )]
     pub filename: String,
 
@@ -42,9 +41,8 @@ pub struct CLIArgs {
         short = 'c',
         long = "conversions",
         about = "The location of the conversions file with parameter values for this run.",
-        default_value = "./conversions.yml"
     )]
-    pub conv_filename: String,
+    pub conv_filename: Option<String>,
 
     #[clap(
         short = 'm',
