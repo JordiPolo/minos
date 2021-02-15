@@ -4,6 +4,7 @@ The Daedalus crate provides auto-generation of test scenarios out of openapi fil
 
 #![deny(missing_docs)]
 
+mod error;
 mod known_param;
 mod mutation;
 mod operation;
@@ -11,14 +12,12 @@ mod request;
 mod request_param;
 mod scenario;
 mod spec;
-mod error;
 
 use openapi_utils::{ReferenceOrExt, ServerExt, SpecExt};
 
 pub use request::Request;
 pub use scenario::Scenario;
 pub use scenario::ScenarioExpectation;
-
 
 /// Configuration for the generation of the scenarios.
 pub struct GeneratorConfig {
@@ -74,7 +73,7 @@ impl Generator {
     fn endpoints(spec: openapiv3::OpenAPI, matches: &str) -> Vec<operation::Endpoint> {
         let base_path = match spec.servers.first() {
             None => String::from(""),
-            Some(server) => server.base_path()
+            Some(server) => server.base_path(),
         };
         spec.paths
             .into_iter()
@@ -100,7 +99,7 @@ mod tests {
             "not_there.yaml".to_string(),
             Some("not_there_either.yaml".to_string()),
             true,
-            "/".to_string()
+            "/".to_string(),
         );
         Generator::new(&config).unwrap();
     }
@@ -111,7 +110,7 @@ mod tests {
             "test_openapi.yaml".to_string(),
             Some("test_conversions.yaml".to_string()),
             true,
-            "/".to_string()
+            "/".to_string(),
         );
         let generator = Generator::new(&config).unwrap();
         let scenarios = generator.scenarios();

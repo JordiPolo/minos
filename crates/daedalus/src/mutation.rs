@@ -1,9 +1,9 @@
+use crate::error::DaedalusError;
 use crate::known_param::Conversions;
 use crate::operation::Endpoint;
 use crate::request::ScenarioRequest;
 use crate::request_param::RequestParam;
 use crate::scenario::Scenario;
-use crate::error::DaedalusError;
 use http::StatusCode;
 use instructions::{Mutagen, MutagenInstruction, RequestPart};
 use itertools::Itertools;
@@ -111,7 +111,10 @@ pub(crate) struct Mutator {
 }
 
 impl Mutator {
-    pub(crate) fn new(conversions_filename: &Option<String>, run_all_codes: bool) -> Result<Self, DaedalusError> {
+    pub(crate) fn new(
+        conversions_filename: &Option<String>,
+        run_all_codes: bool,
+    ) -> Result<Self, DaedalusError> {
         Ok(Mutator {
             known_params: Conversions::new(conversions_filename)?,
             run_all_codes,
