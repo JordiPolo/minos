@@ -1,0 +1,14 @@
+
+paths:
+  "/":
+    uuid: [03b97130-1be2-42f9-bdaf-e1f6a2b9e269]
+  "/users_data":
+    name: ThatUser
+    uuid: 22297130-1be2-42f9-bdaf-e1f6a2b9e222
+  "/users":
+    name: ThisUser
+    uuid: 11197130-1be2-42f9-bdaf-e1f6a2b9e111
+  "/currencies":
+    name: Dollar
+    uuid: facaca04-d759-4d9d-99f5-fe97bd10a996
+

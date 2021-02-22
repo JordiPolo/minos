@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 use crate::error::DaedalusError;
 use crate::spec;
 
+// This is the values of the conversion
 // StringOrArray and Raw to allow either strings or list of strings
 #[derive(Deserialize, Debug, PartialEq, Clone)]
 #[serde(from = "Raw")]
@@ -61,53 +62,96 @@ pub(crate) struct ConversionView<'a> {
 }
 
 impl<'a> ConversionView<'a> {
-    pub(crate) fn param_value(&self, name: &str) -> Option<String> {
-        let mut matches = self.matches(name);
+    pub(crate) fn param_value(&self, name: &str) -> Option<&String> {
+        // We leave only paths that contain inside the param name we care about
+        let matches = self
+            .paths
+            .iter()
+            .filter(|(_name, path)| path.get(name).is_some());
 
-        if matches.is_empty() {
-            return None;
+        let mut the_default = None;
+        let mut not_default = None;
+
+        //b a_match is a tuple (string, Btreemap<string, StringOrArray>)
+        for a_match in matches {
+            if a_match.0 == &"/" {
+                the_default = Some(a_match.1);
+            } else {
+                not_default = Some(a_match.1);
+            }
         }
 
-        // If possible, we get a more specific value
-        if matches.len() > 1 {
-            matches.remove(&"/".to_string());
-        }
-        // Get the name from the first element, not sure if there is a better way to find that
-        let values: Vec<&&BTreeMap<String, StringOrArray>> = matches.values().collect();
-        let value_list = &values[0].get(name).unwrap().0;
+        // If posible choose a more specific value, it not the value under "/"" else we have None
+        let result = not_default.or(the_default).or(None);
 
-        Some(
-            value_list
-                .choose(&mut rand::thread_rng())
+        result.and_then(|inner_hashmap| {
+            inner_hashmap
+                .get(name)
                 .unwrap()
-                .to_string(),
-        )
+                .0
+                .choose(&mut rand::thread_rng()) //choose returns an Option, we connect to it with and_then
+        })
     }
 
     // a pattern may be /users/{uuid}/friends/{uuid2}
-    // TODO: use the logic above to use non "/" if possible
     pub(crate) fn retrieve_known_path(&self, pattern: &str) -> Option<String> {
-        for (_path, keys) in self.paths.clone() {
+        let mut r_default = None;
+        let mut r_specific = None;
+
+        for (path, inner_hash) in &self.paths {
             let mut result = pattern.to_owned();
-            for (key, value) in keys {
+            for (key, value) in *inner_hash {
                 let random_value = &value.0.choose(&mut rand::thread_rng()).unwrap();
                 // We want to accumulate the changes of result on itself so things with multiple variables like
                 // /resource/{id}{tag} gets every variable replaced and saved
                 result = str::replace(&result, &format!("{{{}}}", key), random_value)
             }
+            // If we resolved all the variables
             if !result.contains('{') {
-                return Some(result);
+                if path == &&"/".to_string() {
+                    r_default = Some(result);
+                } else {
+                    r_specific = Some(result);
+                }
             }
         }
-        None
+        r_specific.or(r_default).or(None)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn testing_param_values() {
+        let conversions =
+            Conversions::new(&Some("tests/support/test_conversions.yaml".to_string())).unwrap();
+        let all_matches = conversions.for_path("/");
+
+        assert_eq!(
+            all_matches.param_value("uuid"),
+            Some(&"03b97130-1be2-42f9-bdaf-e1f6a2b9e269".to_string())
+        );
+        assert_eq!(all_matches.param_value("itisnothere"), None);
+
+        // Retrieves a more specific uuid
+        let user_matches = conversions.for_path("/users");
+        assert_eq!(
+            user_matches.param_value("uuid"),
+            Some(&"11197130-1be2-42f9-bdaf-e1f6a2b9e111".to_string())
+        );
     }
 
-    // TODO: not clone
-    fn matches(&self, name: &str) -> BTreeMap<&String, &BTreeMap<String, StringOrArray>> {
-        self.paths
-            .clone()
-            .into_iter()
-            .filter(|(_name, path)| path.get(name).is_some())
-            .collect()
+    #[test]
+    fn testing_retrieve_known_paths() {
+        let path = "/currencies/{uuid}";
+        let conversions =
+            Conversions::new(&Some("tests/support/test_conversions.yaml".to_string())).unwrap();
+        let result = conversions.for_path(path).retrieve_known_path(path);
+        assert_eq!(
+            result,
+            Some("/currencies/facaca04-d759-4d9d-99f5-fe97bd10a996".to_string())
+        );
     }
 }

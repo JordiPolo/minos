@@ -353,6 +353,7 @@ impl Mutator {
                 if param.location_string() == "path" {
                     None
                 } else {
+                    // TODO: avoid heavy processing there inside a loop
                     let known_params = self.known_params.for_path(&endpoint.path_name);
                     Some(params::mutate(&param, &known_params, self.run_all_codes).variations)
                 }

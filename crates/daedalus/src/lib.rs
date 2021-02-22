@@ -87,37 +87,3 @@ impl Generator {
             .collect()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    #[should_panic]
-    fn passing_inexisting_files() {
-        let config = GeneratorConfig::new(
-            "not_there.yaml".to_string(),
-            Some("not_there_either.yaml".to_string()),
-            true,
-            "/".to_string(),
-        );
-        Generator::new(&config).unwrap();
-    }
-
-    #[test]
-    fn passing_existing_files() {
-        let config = GeneratorConfig::new(
-            "test_openapi.yaml".to_string(),
-            Some("test_conversions.yaml".to_string()),
-            true,
-            "/".to_string(),
-        );
-        let generator = Generator::new(&config).unwrap();
-        let scenarios = generator.scenarios();
-        let mut ein = 0;
-        for scenario in scenarios {
-            ein = ein + 1;
-        }
-        assert_eq!(ein, 5);
-    }
-}

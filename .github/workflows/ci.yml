@@ -67,3 +67,6 @@ jobs:
 
     - name: Build release binary
       run: cargo build  --release ${{ env.TARGET_FLAGS }}
+
+    - name: Run tests
+      run: cargo test

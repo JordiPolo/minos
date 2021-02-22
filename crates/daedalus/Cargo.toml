@@ -11,7 +11,6 @@ repository = "https://github.com/JordiPolo/minos/tree/master/crates/generator"
 readme = "README.md"
 keywords = []
 license = "MIT"
-autotests = false
 
 [dependencies]
 regex = "1.0"

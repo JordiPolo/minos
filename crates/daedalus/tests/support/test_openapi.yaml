@@ -1,0 +1,91 @@
+openapi: 3.0.2
+info:
+  version: 0.1
+  description: Currency service
+  title: Currencies
+paths:
+  '/currencies':
+    get:
+      summary: Get All Currencies
+      operationId: currencies.index
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/perPage'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Currency'
+  '/currencies/{uuid}':
+    get:
+      summary: Get a Currency
+      operationId: currencies.show
+      parameters:
+        - $ref: '#/components/parameters/uuid'
+      responses:
+        '200':
+          description: Success.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Currency'
+        '404':
+          description: Currency not found for `uuid`.
+components:
+  parameters:
+    page:
+      name: page
+      in: query
+      description: Returns the page contents for the specified page number from the paginated result of the search.
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    perPage:
+      name: per_page
+      in: query
+      description: Specifies how many items to return in each page of results.
+      schema:
+        type: integer
+        minimum: 1
+        default: 10
+    uuid:
+      name: uuid
+      in: path
+      required: true
+      description: Resource UUID.
+      schema:
+        type: string
+        maxLength: 255
+        format: uuid
+        default: desc
+  schemas:
+    Currency:
+      x-mdsol:
+        resource: currencies
+      type: object
+      properties:
+        name:
+          description: Name of the currency.
+          type: string
+        code:
+          description: '[ISO 4217](https://www.iso.org/iso-4217-currency-codes.html) three-letter code for the currency.'
+          type: string
+        symbol:
+          description: Symbol of the currency.
+          type: string
+        uuid:
+          description: Database-independent universally unique identifier.
+          type: string
+          format: uuid
+      example:
+        {
+          "uuid": "67c397fc-caff-11e7-abc4-cec278b6b50a",
+          "code": "AED",
+          "symbol": "د.إ",
+          "name": "United Arab Emirates Dirham"
+        }
