@@ -1,15 +1,18 @@
 
+# Minos
+
 Minos generates scenarios based on the information in an OpenAPI v3 file.
 These scenarios can then be displayed, used as a test suite or used as a performance suite.
 
 Minos can generate scenarios for edge cases and incorrect cases. See the [Scenarios](#Scenarios) for details.
 
 Minos is opinionated and expects the OpenAPI file and the service to follow best practices.
-PRs are welcomed to make it more generic.
 
 # Installation
 
-Download the [latest release](https://github.com/jordipolo/minos/releases/latest) for your system.
+On Mac + homebrew you can simply `brew install jordipolo/minos/minos`
+
+In other platforms, download the [latest release](https://github.com/jordipolo/minos/releases/latest) for your system.
 Copy it to the directory of your project or somewhere in your PATH.
 These are static binaries, they have zero dependencies and can run in any system without additional software.
 
@@ -31,13 +34,13 @@ You can use the following common flags before your command below to control its 
 
 To just inspect the generated scenarios but not create any request do:
 ```
-minos ls
+./minos -f my_openapi.yaml ls
 ```
 
 ### Testing scenarios
-To run the scenarios as a test suite:
+To run the scenarios as a test suite, running all scenarios (-a):
 ```
-minos verify -n
+./minos -a -f my_openapi.yaml verify -n
 ```
 
 - `-n` will instruct Minos to allow errors codes to not have strict schemas.
@@ -46,7 +49,7 @@ minos verify -n
 ### Performance suite
 To run the scenarios as a performace suite:
 ```
-minos performance -t 64 -r 100 -l 2m
+./minos -f my_openapi.yaml performance -t 64 -r 100 -l 2m
 ```
 - `-t 64` will launch the load of 64 users simultaneously.
 Each user uses an independent thread which uses memory, you may start consuming a lot with more than 1000 users.
@@ -60,7 +63,7 @@ You can use other such notations like 90s or 1h30m , etc.
 
  ## Examples
 
-Let's just check the scenarios we get for this huge file. Only interested on path with text "users" in them:
+Let's display all scenarios we get for a huge openapi file. Only interested on paths with text "users" in them:
 ```
 ./minos -a -f=huge_service/api_definition/openapi.yaml -m=users ls
 ```
@@ -76,12 +79,14 @@ Now let's see how good is our performance, let's not use `-a` to avoid measuring
 ```
 
 
-
 ## Conversions file
 This step is optional.
 Minos allows you to specify the value of any parameter. Minos will use this information to create requests.
 This is typically used to provide IDs that need to exist in your database (user_id, app_uuid, etc.).
 The default location for the file is `./conversions.yml` but this value can be overwriten with the `-c` parameter.
+
+For [this openapi file](crates/daedalus/tests/support/test_openapi.yaml),
+you can use [this conversions file](crates/daedalus/tests/support/test_conversions.yaml).
 
 ### Example
 Our Openapi spec has the following routes
